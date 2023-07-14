@@ -32,6 +32,9 @@ class PowerMonitoring:
     self.integration_lock = threading.Lock()
 
     # FrogPilot variables
+    device_shutdown_setting = self.params.get_int("DeviceShutdownTimer")
+    # If the toggle is set for < 1 hour, configure by 15 minute increments
+    MAX_TIME_OFFROAD_S = (device_shutdown_setting - 3) * 3600 if device_shutdown_setting >= 4 else device_shutdown_setting * (60 * 15)
 
     car_battery_capacity_uWh = self.params.get("CarBatteryCapacity")
     if car_battery_capacity_uWh is None:
