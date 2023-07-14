@@ -1,0 +1,28 @@
+name: Update last update date
+
+on:
+  push:
+    branches:
+      - FrogPilot-Development
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get formatted commit date
+        run: |
+          LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=short)
+          FORMATTED_DATE=$(date -d"$LAST_COMMIT_DATE" +'%B %d, %Y' | sed 's/ 01, / 1st, /;s/ 02, / 2nd, /;s/ 03, / 3rd, /;s/ 0\([4-9]\), / \1th, /;s/ \([1-9]\{2\}\), / \1th, /')
+          echo "FORMATTED_DATE=$FORMATTED_DATE" >> $GITHUB_ENV
+      - name: Update README and commit changes
+        run: |
+          sed -i 's/\*\*.*\*\*/**'"$FORMATTED_DATE"'**/' README.md
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:%s)
+          if [ "$COMMIT_MESSAGE" != "Updated README with latest update date" ]; then
+            git config --local user.email "91348155+FrogAi@users.noreply.github.com"
+            git config --local user.name "FrogAi"
+            git diff --quiet && git diff --staged --quiet || (git commit -am "Updated README with latest update date"; git push)
+          fi
