@@ -10,6 +10,7 @@ from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
+from selfdrive.controls.lib.lateral_planner import TRAJECTORY_SIZE
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, MIN_ACCEL, MAX_ACCEL
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
@@ -31,6 +32,12 @@ A_CRUISE_MAX_BP_PERSONAL_TUNE = [0., 3, 6., 8., 11., 15., 20., 25., 30., 55.]
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
+# Time threshold for Conditional Experimental Mode (Code runs at 20hz, so: THRESHOLD / 20 = seconds)
+THRESHOLD = 5 # 0.25s
+
+# Lookup table for stop sign / stop light detection
+STOP_SIGN_BREAKING_POINT = [0., 10., 20., 30., 40., 50., 55.]
+STOP_SIGN_DISTANCE = [10, 30., 50., 70., 80., 90., 120.]
 
 def get_min_accel_personal_tune(v_ego):
   return interp(v_ego, A_CRUISE_MIN_BP_PERSONAL_TUNE, A_CRUISE_MIN_VALS_PERSONAL_TUNE)
@@ -76,6 +83,7 @@ class LongitudinalPlanner:
     self.personality = log.LongitudinalPersonality.standard
 
     # FrogPilot variables
+    self.conditional_experimental_mode = self.CP.conditionalExperimentalMode
     self.custom_personalities = self.params.get_bool("CustomDrivingPersonalities")
     self.aggressive_follow = self.params.get_int("AggressivePersonalityValue") / 10
     self.standard_follow = self.params.get_int("StandardPersonalityValue") / 10
@@ -87,10 +95,31 @@ class LongitudinalPlanner:
     self.frogpilot_toggles_updated = False
     self.read_param()
     self.personal_tune = self.CP.personalTune
+    # Set variables for Conditional Experimental Mode
+    self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
+    self.curves = self.params.get_bool("ConditionalExperimentalModeCurves")
+    self.curves_lead = self.params.get_bool("ConditionalExperimentalModeCurvesLead")
+    self.limit = self.params.get_int("ConditionalExperimentalModeSpeed") * CV.MPH_TO_MS
+    self.limit_lead = self.params.get_int("ConditionalExperimentalModeSpeedLead") * CV.MPH_TO_MS
+    self.signal = self.params.get_bool("ConditionalExperimentalModeSignal")
+    self.stop_lights = self.params.get_bool("ConditionalExperimentalModeStopLights")
+    self.curve = False
+    self.experimental_mode = False
+    self.signal = False
+    self.speed = False
+    self.stop_light_detected = False
+    self.curvature_count = 0
+    self.lead_status_count = 0
+    self.previous_lead_speed = 0
+    self.previous_status_value = 0
+    self.stop_light_count = 0
 
   def read_param(self):
     self.frogpilot_toggles_updated = self.params.get_bool("FrogPilotTogglesUpdated")
     if self.frogpilot_toggles_updated:
+      if self.conditional_experimental_mode:
+        self.limit = self.params.get_int("ConditionalExperimentalModeSpeed") * CV.MPH_TO_MS
+        self.limit_lead = self.params.get_int("ConditionalExperimentalModeSpeedLead") * CV.MPH_TO_MS
       if self.custom_personalities:
         self.aggressive_follow = self.params.get_int("AggressivePersonalityValue") / 10
         self.standard_follow = self.params.get_int("StandardPersonalityValue") / 10
@@ -130,6 +159,7 @@ class LongitudinalPlanner:
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode and self.CP.openpilotLongitudinalControl else 'acc'
 
     v_ego = sm['carState'].vEgo
+    v_ego_kph = v_ego * 3.6
     v_lead = sm['radarState'].leadOne.vLead
     v_lead_status = sm['radarState'].leadOne.status
     v_cruise_kph = sm['controlsState'].vCruise
@@ -194,6 +224,107 @@ class LongitudinalPlanner:
     self.a_desired = float(interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
     self.v_desired_filter.x = self.v_desired_filter.x + DT_MDL * (self.a_desired + a_prev) / 2.0
 
+    # Conditional Experimental Mode - Only run if Conditional Experimental Mode is toggled on and openpilot is active
+    if self.conditional_experimental_mode and sm['controlsState'].enabled:
+      carstate, modeldata, radarstate = (sm[key] for key in ['carState', 'modelV2', 'radarState'])
+
+      # Lead detection
+      def detect_lead():
+        if v_lead_status:
+          self.lead_status_count = max(10, self.lead_status_count + 1)
+        else:
+          self.lead_status_count = min(0, self.lead_status_count - 1)
+        # Check if lead is detected for > 0.25s
+        return self.lead_status_count >= THRESHOLD
+
+      # Determine the road curvature - Credit goes to to Pfeiferj!
+      def road_curvature(lead, standstill):
+        # Check if there's a lead vehicle if the toggle is on
+        if self.curves and not (not self.curves_lead and lead) and not standstill:
+          predicted_lateral_accelerations = np.abs(np.array(modeldata.acceleration.y))
+          predicted_velocities = np.array(modeldata.velocity.x)
+          if len(predicted_lateral_accelerations) == len(predicted_velocities) != 0:
+            curvature_ratios = predicted_lateral_accelerations / (predicted_velocities ** 2)
+            predicted_lateral_accelerations = curvature_ratios * (v_ego ** 2)
+            curvature = np.amax(predicted_lateral_accelerations)
+            if curvature >= 1.6 or (self.curve and curvature > 1.1):
+              # Setting the maximum to 10 lets it hold the status for 0.25s after it goes "False" to help prevent false negatives
+              self.curvature_count = min(10, self.curvature_count + 1)
+            else:
+              self.curvature_count = max(0, self.curvature_count - 1)
+            # Check if curve is detected for > 0.25s
+            return self.curvature_count >= THRESHOLD
+        return False
+
+      # Stop sign and stop light detection - Credit goes to the DragonPilot team!
+      def stop_sign_and_light(lead, standstill):
+        if self.stop_lights and abs(carstate.steeringAngleDeg) <= 60 and not standstill or self.stop_light_count >= THRESHOLD:
+          # Check to make sure we don't have a lead that's stopping for the red light / stop sign
+          if not lead or (lead and not (self.previous_lead_speed >= v_lead or radarstate.leadOne.dRel <= 5 or v_lead <= 1)):
+            if len(modeldata.orientation.x) == len(modeldata.position.x) == TRAJECTORY_SIZE:
+              if modeldata.position.x[TRAJECTORY_SIZE - 1] < interp(v_ego_kph, STOP_SIGN_BREAKING_POINT, STOP_SIGN_DISTANCE):
+                self.stop_light_count = min(10, self.stop_light_count + 1)
+              else:
+                self.stop_light_count = max(0, self.stop_light_count - 1)
+            else:
+              self.stop_light_count = max(0, self.stop_light_count - 1)
+          else:
+            self.stop_light_count = max(0, self.stop_light_count - 1)
+        else:
+          self.stop_light_count = max(0, self.stop_light_count - 1)
+        self.previous_lead_speed = v_lead
+        # Check if stop sign / stop light is detected for > 0.25s
+        return self.stop_light_count >= THRESHOLD
+
+      # Check conditions for the appropriate state of Experimental Mode
+      def check_conditions():
+        # Set the current driving states
+        lead = detect_lead()
+        standstill = carstate.standstill
+
+        # Prevent Experimental Mode from deactivating at a standstill so we don't accidentally run red lights/stop signs
+        if standstill and self.experimental_mode:
+          return True
+
+        # Speed check
+        self.speed = (self.limit != 0 and not lead and v_ego < self.limit) or (self.limit_lead != 0 and lead and v_ego < self.limit_lead)
+        if self.speed:
+          return True
+
+        # Turn signal check
+        self.signal = self.signal and v_ego < 25 and (carstate.leftBlinker or carstate.rightBlinker)
+        if self.signal:
+          return True
+
+        # Stop sign and light check
+        self.stop_light_detected = stop_sign_and_light(lead, standstill)
+        if self.stop_light_detected:
+          return True
+
+        # Road curvature check
+        self.curve = road_curvature(lead, standstill)
+        if self.curve:
+          return True
+
+      # Set the value of "overridden"
+      if self.experimental_mode_via_wheel:
+        overridden = self.params.get_int("ConditionalStatus")
+      else:
+        overridden = 0
+
+      # Update Experimental Mode based on the current driving conditions
+      if (not self.experimental_mode and check_conditions() and overridden != 1) or overridden == 2:
+        self.experimental_mode = True
+      elif (self.experimental_mode and not check_conditions() and overridden != 2) or overridden == 1:
+        self.experimental_mode = False
+
+      # Set parameter for on-road status bar
+      status_value = 1 if overridden == 1 else 2 if overridden == 2 else 3 if self.signal else 4 if self.stop_light_detected else 5 if self.curve else 6 if self.speed and not lead else 7 if self.speed else 0
+      # Update status value if it has changed
+      if status_value != self.previous_status_value:
+        self.previous_status_value = status_value
+        put_int_nonblocking("ConditionalStatus", status_value)
+
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
 
@@ -216,6 +347,8 @@ class LongitudinalPlanner:
     longitudinalPlan.personality = self.personality
 
     # FrogPilot longitudinalPlan variables
+    longitudinalPlan.conditionalExperimentalMode = self.experimental_mode
     longitudinalPlan.frogpilotTogglesUpdated = self.frogpilot_toggles_updated
+    longitudinalPlan.statusValue = self.previous_status_value
 
     pm.send('longitudinalPlan', plan_send)
