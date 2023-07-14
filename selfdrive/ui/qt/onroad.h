@@ -12,6 +12,10 @@
 const int btn_size = 192;
 const int img_size = (btn_size / 4) * 3;
 
+// FrogPilot global variables
+static bool map_open = false;
+static bool propagateEvent = false;
+
 
 // ***** onroad widgets *****
 class OnroadAlerts : public QWidget {
@@ -32,6 +36,8 @@ private:
 class ExperimentalButton : public QPushButton {
   Q_OBJECT
 
+  // FrogPilot properties
+
 public:
   explicit ExperimentalButton(QWidget *parent = 0);
   void updateState(const UIState &s);
@@ -45,6 +51,9 @@ private:
   QPixmap experimental_img;
   bool experimental_mode;
   bool engageable;
+
+  // FrogPilot variables
+
 };
 
 // container window for the NVG UI
@@ -64,6 +73,9 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
   Q_PROPERTY(int status MEMBER status);
 
+  // FrogPilot properties
+  Q_PROPERTY(bool experimentalMode MEMBER experimentalMode);
+
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
@@ -71,6 +83,9 @@ public:
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+
+  // FrogPilot widgets
+  void drawStatusBar(QPainter &p);
 
   ExperimentalButton *experimental_btn;
   QPixmap dm_img;
@@ -93,6 +108,9 @@ private:
   int skip_frame_count = 0;
   bool wide_cam_requested = false;
 
+  // FrogPilot variables
+  bool experimentalMode;
+
 protected:
   void paintGL() override;
   void initializeGL() override;
@@ -105,6 +123,8 @@ protected:
   inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
   inline QColor blackColor(int alpha = 255) { return QColor(0, 0, 0, alpha); }
+
+  // FrogPilot colors
 
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;

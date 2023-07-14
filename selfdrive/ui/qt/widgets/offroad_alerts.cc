@@ -47,6 +47,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
     footer_layout->addWidget(rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
     QObject::connect(rebootBtn, &QPushButton::clicked, [=]() {
       params.put("Updated", QDateTime::currentDateTime().toTimeZone(QTimeZone("America/Phoenix")).toString("MMMM d, yyyy - h:mma").toStdString());
+      params.putBool("DefaultParamsSet", false); // Check the params again upon boot just in case of new toggles
       QProcess::execute("rm -f /data/openpilot/prebuilt"); // Remove the prebuilt file when installing updates
       Hardware::reboot();
     });

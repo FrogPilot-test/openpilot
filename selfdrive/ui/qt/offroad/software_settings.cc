@@ -48,6 +48,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   installBtn = new ButtonControl(tr("Install Update"), tr("INSTALL"));
   connect(installBtn, &ButtonControl::clicked, [=]() {
     params.put("Updated", QDateTime::currentDateTime().toTimeZone(QTimeZone("America/Phoenix")).toString("MMMM d, yyyy - h:mma").toStdString());
+    params.putBool("DefaultParamsSet", false); // Check the params again upon boot just in case of new toggles
     QProcess::execute("rm -f /data/openpilot/prebuilt"); // Remove the prebuilt file when installing updates
     installBtn->setEnabled(false);
     params.putBool("DoReboot", true);

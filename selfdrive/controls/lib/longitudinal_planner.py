@@ -2,7 +2,7 @@
 import math
 import numpy as np
 from common.numpy_fast import clip, interp
-from common.params import Params
+from common.params import Params, put_bool_nonblocking, put_int_nonblocking
 from cereal import log
 
 import cereal.messaging as messaging
@@ -61,10 +61,20 @@ class LongitudinalPlanner:
     self.solverExecutionTime = 0.0
     self.params = Params()
     self.param_read_counter = 0
-    self.read_param()
     self.personality = log.LongitudinalPersonality.standard
 
+    # FrogPilot variables
+    self.frogpilot_toggles_checked = False
+    self.frogpilot_toggles_updated = False
+    self.read_param()
+
   def read_param(self):
+    self.frogpilot_toggles_updated = self.params.get_bool("FrogPilotTogglesUpdated")
+    if self.frogpilot_toggles_updated:
+      # Check values twice before resetting "FrogPilotTogglesUpdated" so other parts of the code update
+      if self.frogpilot_toggles_checked:
+        put_bool_nonblocking("FrogPilotTogglesUpdated", False)
+      self.frogpilot_toggles_checked = not self.frogpilot_toggles_checked
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
@@ -170,5 +180,8 @@ class LongitudinalPlanner:
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
     longitudinalPlan.personality = self.personality
+
+    # FrogPilot longitudinalPlan variables
+    longitudinalPlan.frogpilotTogglesUpdated = self.frogpilot_toggles_updated
 
     pm.send('longitudinalPlan', plan_send)
