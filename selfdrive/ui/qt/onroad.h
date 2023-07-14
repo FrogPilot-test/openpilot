@@ -6,6 +6,7 @@
 
 #include "common/util.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/screenrecorder/screenrecorder.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 
@@ -176,6 +177,11 @@ private:
   static constexpr int totalFrames = 8;
   std::map<int, QPixmap> wheel_images;
   std::vector<QPixmap> signalImgVector;
+  
+  // Screen recorder
+  ScreenRecorder* recorder;
+  std::shared_ptr<QTimer> record_timer;
+  QPoint startPos;
 
 protected:
   void paintGL() override;
