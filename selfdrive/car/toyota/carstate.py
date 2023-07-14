@@ -166,6 +166,9 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
+    # For configuring onroad statuses
+    ret.toyotaCar = True
+
     return ret
 
   @staticmethod

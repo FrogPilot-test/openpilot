@@ -155,6 +155,7 @@ typedef struct UIScene {
   bool frogpilot_toggles_updated;
   bool mute_dm;
   bool rotating_wheel;
+  bool toyota_car = true;
   bool unlimited_road_ui_length;
   bool wide_camera_disabled;
   float lane_line_width;

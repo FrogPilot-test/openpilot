@@ -227,6 +227,9 @@ static void update_state(UIState *s) {
     if (scene.blind_spot_path || scene.rotating_wheel) {
       scene.steering_angle_deg = carState.getSteeringAngleDeg();
     }
+    if (scene.started) {
+      scene.toyota_car = carState.getToyotaCar();
+    }
   }
   if (sm.updated("controlsState")) {
     const auto controlsState = sm["controlsState"].getControlsState();

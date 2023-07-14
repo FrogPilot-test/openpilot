@@ -15,6 +15,7 @@ const int img_size = (btn_size / 4) * 3;
 // FrogPilot global variables
 static bool map_open = false;
 static bool propagateEvent = false;
+static bool reverseCruiseIncrease = false;
 static bool speedVisible = true;
 
 

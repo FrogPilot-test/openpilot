@@ -118,6 +118,7 @@ class Controls:
     frog_theme = self.params.get_bool("FrogTheme")
     self.frog_sounds = frog_theme and self.params.get_bool("FrogSounds")
     self.mute_overheat = fire_the_babysitter and self.params.get_bool("MuteSystemOverheat")
+    self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -584,6 +585,10 @@ class Controls:
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
 
+    # Check the value of "reverse_cruise_increase" just in case the user changed its value mid drive
+    if long_plan.frogpilotTogglesUpdated:
+      self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
+
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
     CC.latActive = self.active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
@@ -747,7 +752,7 @@ class Controls:
     if not self.read_only and self.initialized:
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(sec_since_boot() * 1e9)
-      self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
+      self.last_actuators, can_sends = self.CI.apply(CC, now_nanos, self.reverse_cruise_increase)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
