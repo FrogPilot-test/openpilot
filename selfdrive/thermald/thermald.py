@@ -291,7 +291,7 @@ def thermald_thread(end_event, hw_queue):
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
 
     # must be at an engageable thermal band to go onroad
-    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.red
+    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.red or params.get_bool("FireTheBabysitter") and params.get_bool("MuteSystemOverheat")
 
     # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
