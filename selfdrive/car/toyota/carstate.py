@@ -47,6 +47,9 @@ class CarState(CarStateBase):
     # FrogPilot variables
     self.params = Params()
     self.driving_personalities_via_wheel = self.params.get_bool("DrivingPersonalitiesUIWheel")
+    self.experimental_mode_via_wheel = self.CP.experimentalModeViaWheel
+    self.lkas_pressed = False
+    self.lkas_previously_pressed = False
     self.distance_button = 0
     self.distance_lines = 0
     self.previous_distance_lines = 0
@@ -188,6 +191,16 @@ class CarState(CarStateBase):
         put_int_nonblocking("LongitudinalPersonality", self.distance_lines)
         self.previous_distance_lines = self.distance_lines
 
+    # Toggle Experimental Mode from steering wheel function
+    if self.experimental_mode_via_wheel:
+      message_keys = ["LDA_ON_MESSAGE", "LKAS_STATUS", "SET_ME_X02"]
+      self.lkas_pressed = any(cp_cam.vl["LKAS_HUD"].get(key) == 1 for key in message_keys)
+      if self.lkas_pressed and not self.lkas_previously_pressed and ret.cruiseState.enabled:
+        experimental_mode = self.params.get_bool("ExperimentalMode")
+        # Invert the value of "ExperimentalMode"
+        put_bool_nonblocking("ExperimentalMode", not experimental_mode)
+      self.lkas_previously_pressed = self.lkas_pressed
+
     # For configuring onroad statuses
     ret.toyotaCar = True
 
@@ -294,6 +307,9 @@ class CarState(CarStateBase):
       signals += [
         ("DISTANCE", 'ACC_CONTROL'),
         ("FCW", "ACC_HUD"),
+        ("LDA_ON_MESSAGE", "LKAS_HUD"),
+        ("LKAS_STATUS", "LKAS_HUD"),
+        ("SET_ME_X02", "LKAS_HUD"),
       ]
       checks += [
         ("ACC_HUD", 1),
@@ -325,6 +341,9 @@ class CarState(CarStateBase):
         ("LANE_SWAY_WARNING", "LKAS_HUD"),
         ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
         ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
+        ("LDA_ON_MESSAGE", "LKAS_HUD"),
+        ("LKAS_STATUS", "LKAS_HUD"),
+        ("SET_ME_X02", "LKAS_HUD"),
       ]
       checks += [
         ("LKAS_HUD", 1),
