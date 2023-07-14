@@ -55,6 +55,17 @@ class CarState(CarStateBase):
     self.distance_lines = 0
     self.previous_distance_lines = 0
 
+    # DragonPilot TSS2 Prius BSM
+    self.left_blindspot = False
+    self.left_blindspot_d1 = 0
+    self.left_blindspot_d2 = 0
+    self.left_blindspot_counter = 0
+
+    self.right_blindspot = False
+    self.right_blindspot_d1 = 0
+    self.right_blindspot_d2 = 0
+    self.right_blindspot_counter = 0
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -173,6 +184,49 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
+
+    # DragonPilot TSS2 Prius BSM
+    if self.CP.carFingerprint == CAR.PRIUS_TSS2:
+      distance_1 = cp.vl["DEBUG"].get('BLINDSPOTD1')
+      distance_2 = cp.vl["DEBUG"].get('BLINDSPOTD2')
+      side = cp.vl["DEBUG"].get('BLINDSPOTSIDE')
+
+      if distance_1 is not None and distance_2 is not None and side is not None:
+        if side == 65: # Left blind spot
+          if distance_1 != self.left_blindspot_d1:
+            self.left_blindspot_d1 = distance_1
+            self.left_blindspot_counter = 100
+          if distance_2 != self.left_blindspot_d2:
+            self.left_blindspot_d2 = distance_2
+            self.left_blindspot_counter = 100
+          if self.left_blindspot_d1 > 10 or self.left_blindspot_d2 > 10:
+            self.left_blindspot = True
+        elif side == 66: # Right blind spot
+          if distance_1 != self.right_blindspot_d1:
+            self.right_blindspot_d1 = distance_1
+            self.right_blindspot_counter = 100
+          if distance_2 != self.right_blindspot_d2:
+            self.right_blindspot_d2 = distance_2
+            self.right_blindspot_counter = 100
+          if self.right_blindspot_d1 > 10 or self.right_blindspot_d2 > 10:
+            self.right_blindspot = True
+
+          if self.left_blindspot_counter > 0:
+            self.left_blindspot_counter -= 2
+          else:
+            self.left_blindspot = False
+            self.left_blindspot_d1 = 0
+            self.left_blindspot_d2 = 0
+
+        if self.right_blindspot_counter > 0:
+          self.right_blindspot_counter -= 2
+        else:
+          self.right_blindspot = False
+          self.right_blindspot_d1 = 0
+          self.right_blindspot_d2 = 0
+
+        ret.leftBlindspot = self.left_blindspot
+        ret.rightBlindspot = self.right_blindspot
 
     # Driving personalities function
     if self.driving_personalities_via_wheel:

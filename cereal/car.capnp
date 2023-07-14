@@ -221,7 +221,11 @@ struct CarState {
   charging @43 :Bool;
 
   # FrogPilot CarStates
-  toyotaCar @48 :Bool;
+  leftBlindspotD1 @48 :Float32;
+  leftBlindspotD2 @49 :Float32;
+  rightBlindspotD1 @50 :Float32;
+  rightBlindspotD2 @51 :Float32;
+  toyotaCar @52 :Bool;
 
   struct WheelSpeeds {
     # optional wheel speeds
