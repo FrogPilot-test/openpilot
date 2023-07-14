@@ -199,6 +199,15 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(fals
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);
+
+  // Custom steering wheel images
+  wheel_images = {
+    {0, loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size})},
+    {1, loadPixmap("../assets/lexus.png", {img_size, img_size})},
+    {2, loadPixmap("../assets/toyota.png", {img_size, img_size})},
+    {3, loadPixmap("../assets/frog.png", {img_size, img_size})},
+    {4, loadPixmap("../assets/rocket.png", {img_size, img_size})}
+  };
 }
 
 void ExperimentalButton::changeMode() {
@@ -217,21 +226,25 @@ void ExperimentalButton::updateState(const UIState &s) {
   }
 
   // FrogPilot properties
+  setProperty("steeringWheel", s.scene.steering_wheel);
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   // If the rotating steering wheel toggle is on hide the icon
   static auto &scene = uiState()->scene;
   if (!scene.rotating_wheel) {
+    // Custom steering wheel icon
+    engage_img = wheel_images[steeringWheel];
+
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
     QPoint center(btn_size / 2, btn_size / 2);
-    QPixmap img = experimental_mode ? experimental_img : engage_img;
+    QPixmap img = steeringWheel ? engage_img : experimental_mode ? experimental_img : engage_img;
 
     p.setOpacity(1.0);
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(0, 0, 0, 166));
+    p.setBrush(steeringWheel && experimental_mode ? QColor(218, 111, 37, 241) : QColor(0, 0, 0, 166));
     p.drawEllipse(center, btn_size / 2, btn_size / 2);
     p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
     p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
@@ -258,6 +271,15 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   // FrogPilot images
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
+
+  // Custom steering wheel images
+  wheel_images = {
+    {0, loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size})},
+    {1, loadPixmap("../assets/lexus.png", {img_size, img_size})},
+    {2, loadPixmap("../assets/toyota.png", {img_size, img_size})},
+    {3, loadPixmap("../assets/frog.png", {img_size, img_size})},
+    {4, loadPixmap("../assets/rocket.png", {img_size, img_size})}
+  };
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -320,6 +342,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("muteDM", s.scene.mute_dm);
   setProperty("rotatingWheel", s.scene.rotating_wheel);
   setProperty("steeringAngleDeg", s.scene.steering_angle_deg);
+  setProperty("steeringWheel", s.scene.steering_wheel);
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -747,16 +770,19 @@ void AnnotatedCameraWidget::drawRotatingWheel(QPainter &p, int x, int y) {
   // Variable declarations
   const auto &scene = uiState()->scene;
 
+  // Custom steering wheel icon
+  engage_img = wheel_images[steeringWheel];
+
   // Enable Antialiasing
   p.setRenderHint(QPainter::Antialiasing);
 
   // Set the icon according to the current status of "Experimental Mode"
-  QPixmap img = experimentalMode ? experimental_img : engage_img;
+  QPixmap img = steeringWheel ? engage_img : (experimentalMode ? experimental_img : engage_img);
 
   // Draw the icon and rotate it alongside the steering wheel
   p.setOpacity(1.0);
   p.setPen(Qt::NoPen);
-  p.setBrush(scene.navigate_on_openpilot ? QColor(42, 0, 255, 166) : QColor(0, 0, 0, 166));
+  p.setBrush(steeringWheel && experimentalMode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(32, 80, 223, 255) : QColor(0, 0, 0, 166));
   p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
   p.save();
   p.translate(x, y);
