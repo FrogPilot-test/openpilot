@@ -273,6 +273,7 @@ void ui_update_params(UIState *s) {
     scene.compass = params.getBool("Compass");
     scene.custom_road_ui = params.getBool("CustomRoadUI");
     scene.blind_spot_path = scene.custom_road_ui && params.getBool("BlindSpotPath");
+    scene.driving_personalities_ui_wheel = params.getBool("DrivingPersonalitiesUIWheel");
     scene.frog_theme = params.getBool("FrogTheme");
     scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
     scene.frog_signals = scene.frog_theme && params.getBool("FrogSignals");
