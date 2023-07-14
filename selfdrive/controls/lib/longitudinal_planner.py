@@ -76,6 +76,13 @@ class LongitudinalPlanner:
     self.personality = log.LongitudinalPersonality.standard
 
     # FrogPilot variables
+    self.custom_personalities = self.params.get_bool("CustomDrivingPersonalities")
+    self.aggressive_follow = self.params.get_int("AggressivePersonalityValue") / 10
+    self.standard_follow = self.params.get_int("StandardPersonalityValue") / 10
+    self.relaxed_follow = self.params.get_int("RelaxedPersonalityValue") / 10
+    self.aggressive_jerk = self.params.get_int("AggressiveJerkValue") / 10
+    self.standard_jerk = self.params.get_int("StandardJerkValue") / 10
+    self.relaxed_jerk = self.params.get_int("RelaxedJerkValue") / 10
     self.frogpilot_toggles_checked = False
     self.frogpilot_toggles_updated = False
     self.read_param()
@@ -84,6 +91,13 @@ class LongitudinalPlanner:
   def read_param(self):
     self.frogpilot_toggles_updated = self.params.get_bool("FrogPilotTogglesUpdated")
     if self.frogpilot_toggles_updated:
+      if self.custom_personalities:
+        self.aggressive_follow = self.params.get_int("AggressivePersonalityValue") / 10
+        self.standard_follow = self.params.get_int("StandardPersonalityValue") / 10
+        self.relaxed_follow = self.params.get_int("RelaxedPersonalityValue") / 10
+        self.aggressive_jerk = self.params.get_int("AggressiveJerkValue") / 10
+        self.standard_jerk = self.params.get_int("StandardJerkValue") / 10
+        self.relaxed_jerk = self.params.get_int("RelaxedJerkValue") / 10
       # Check values twice before resetting "FrogPilotTogglesUpdated" so other parts of the code update
       if self.frogpilot_toggles_checked:
         put_bool_nonblocking("FrogPilotTogglesUpdated", False)
@@ -156,11 +170,11 @@ class LongitudinalPlanner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
-    self.mpc.set_weights(self.personal_tune, v_ego, v_lead, v_lead_status, prev_accel_constraint, personality=self.personality)
+    self.mpc.set_weights(self.personal_tune, v_ego, v_lead, v_lead_status, prev_accel_constraint, self.custom_personalities, self.aggressive_jerk, self.standard_jerk, self.relaxed_jerk, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, v_ego, self.personal_tune, personality=self.personality)
+    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, v_ego, self.personal_tune, self.custom_personalities, self.aggressive_follow, self.standard_follow, self.relaxed_follow, personality=self.personality)
 
     self.x_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.x_solution)
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
