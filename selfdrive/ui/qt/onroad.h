@@ -77,6 +77,8 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(int status MEMBER status);
 
   // FrogPilot properties
+  Q_PROPERTY(bool blindSpotLeft MEMBER blindSpotLeft);
+  Q_PROPERTY(bool blindSpotRight MEMBER blindSpotRight);
   Q_PROPERTY(bool experimentalMode MEMBER experimentalMode);
   Q_PROPERTY(bool frogColors MEMBER frogColors);
   Q_PROPERTY(bool muteDM MEMBER muteDM);
@@ -118,6 +120,8 @@ private:
   bool wide_cam_requested = false;
 
   // FrogPilot variables
+  bool blindSpotLeft;
+  bool blindSpotRight;
   bool experimentalMode;
   bool frogColors;
   bool muteDM;
