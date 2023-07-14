@@ -186,6 +186,7 @@ class CarInterfaceBase(ABC):
 
     # FrogPilot variables
     params = Params()
+    ret.personalTune = params.get_bool("PersonalTune")
     return ret
 
   @staticmethod
