@@ -107,6 +107,9 @@ class Controls:
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
+    # Set the Panda flag to allow full 4.0 m/s acceleration
+    self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX
+
     # Set "Always On Lateral" conditions
     self.always_on_lateral = self.CP.alwaysOnLateral
     self.cruiseState_previously_enabled = False

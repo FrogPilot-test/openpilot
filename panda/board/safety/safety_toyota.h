@@ -17,7 +17,7 @@ const SteeringLimits TOYOTA_STEERING_LIMITS = {
 
 // longitudinal limits
 const LongitudinalLimits TOYOTA_LONG_LIMITS = {
-  .max_accel = 2000,   // 2.0 m/s2
+  .max_accel =  4000,  // 4.0 m/s2
   .min_accel = -3500,  // -3.5 m/s2
 };
 
