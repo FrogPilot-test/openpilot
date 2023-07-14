@@ -18,6 +18,7 @@ FrogPilotPanel::FrogPilotPanel(QWidget *parent) : QWidget(parent) {
     {"ConditionalExperimentalMode", "Conditional Experimental Mode", "Automatically activate 'Experimental Mode' based on specified conditions.", "../assets/offroad/icon_conditional.png"},
     {"CustomDrivingPersonalities", "Custom Driving Personalities", "Customize the driving personality profiles to your liking.", "../assets/offroad/icon_custom.png"},
     {"CustomRoadUI", "Custom Road UI", "Customize the road UI to your liking.", "../assets/offroad/icon_road.png"},
+    {"DeveloperUI", "Developer UI", "Display various information about openpilot and the device itself.", "../assets/offroad/icon_developer.png"},
     {"DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png"},
     {"DisableInternetCheck", "Disable Internet Check", "Allows the device to remain offline indefinitely.", "../assets/offroad/icon_offline.png"},
     {"DrivingPersonalitiesUIWheel", "Driving Personalities Via UI / Wheel", "Switch driving personalities using the 'Distance' button on the steering wheel (Toyota/Lexus Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../assets/offroad/icon_distance.png"},
@@ -70,6 +71,9 @@ FrogPilotPanel::FrogPilotPanel(QWidget *parent) : QWidget(parent) {
         {"BlindSpotPath", "Blind Spot Path"},
         {"UnlimitedLength", "'Unlimited' Road UI Length"},
       }, mainLayout);
+    } else if (key == "DeveloperUI") {
+      mainLayout->addWidget(new DeveloperUI());
+      mainLayout->addWidget(horizontal_line());
     } else if (key == "DeviceShutdownTimer") {
       mainLayout->addWidget(new DeviceShutdownTimer());
       mainLayout->addWidget(horizontal_line());

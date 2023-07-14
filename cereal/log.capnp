@@ -1002,7 +1002,10 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
 
   # FrogPilot LongitudinalPlans
   conditionalExperimentalMode @38 :Bool;
+  desiredFollowDistance @39 :Int16;
   frogpilotTogglesUpdated @40 :Bool;
+  safeObstacleDistance @41 :Int16;
+  stoppedEquivalenceFactor @42 :Int16;
   statusValue @43 :Int8;
 
   enum LongitudinalPlanSource {

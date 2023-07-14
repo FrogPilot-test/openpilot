@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/onroad.h"
 
+#include <chrono>
 #include <cmath>
 
 #include <QDebug>
@@ -436,14 +437,18 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("conditionalSpeed", s.scene.conditional_speed);
   setProperty("conditionalSpeedLead", s.scene.conditional_speed_lead);
   setProperty("conditionalStatus", s.scene.conditional_status);
+  setProperty("desiredFollow", s.scene.desired_follow);
+  setProperty("developerUI", s.scene.developer_ui);
   setProperty("experimentalMode", s.scene.experimental_mode);
   setProperty("frogColors", s.scene.frog_colors);
   setProperty("frogSignals", s.scene.frog_signals);
   setProperty("muteDM", s.scene.mute_dm);
+  setProperty("obstacleDistance", s.scene.obstacle_distance);
   setProperty("onroadAdjustableProfiles", s.scene.driving_personalities_ui_wheel && !s.scene.toyota_car);
   setProperty("rotatingWheel", s.scene.rotating_wheel);
   setProperty("steeringAngleDeg", s.scene.steering_angle_deg);
   setProperty("steeringWheel", s.scene.steering_wheel);
+  setProperty("stoppedEquivalence", s.scene.stopped_equivalence);
   setProperty("toyotaCar", s.scene.toyota_car);
   setProperty("turnSignalLeft", s.scene.turn_signal_left);
   setProperty("turnSignalRight", s.scene.turn_signal_right);
@@ -559,6 +564,11 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   // Compass - Hide the compass when the turn signal animation is on
   if (compass && (!frogSignals || (frogSignals && !turnSignalLeft && !turnSignalRight))) {
     drawCompass(p);
+  }
+
+  // Developer UI
+  if (developerUI) {
+    drawDeveloperUI(p);
   }
 
   // Frog turn signal animation
@@ -831,6 +841,41 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   }
   painter.drawPolygon(chevron, std::size(chevron));
 
+  // Add developer UI if enabled
+  if (developerUI) {
+    // Ensure vLead speed doesn't go under 0 m/s and round it to 2 decimals
+    const float v_lead = std::round(std::max(lead_data.getVLead(), 0.0f) * 100) / 100;
+
+    // Declare the variables
+    static float distance = d_rel;
+    static float speed = v_lead;
+    static QString unit_d = "meters";
+    static QString unit_s = "m/s";
+
+    // Conduct any necessary conversions
+    if (developerUI == 1) {
+      // Convert to US imperial
+      distance = d_rel * 3.28084;
+      speed = v_lead * 2.23694;
+      unit_d = "feet"; 
+      unit_s = "mph";
+    } else if (developerUI == 2) {
+      // Convert to metric
+      speed = v_lead * 3.6;
+      unit_s = "km/h";
+    }
+
+    // Form the combined_text
+    QString combined_text = QString::number(distance, 'f', 2) + " " + unit_d + " | " + QString::number(speed, 'f', 2) + " " + unit_s;
+    painter.setPen(Qt::white);
+    painter.setFont(InterFont(35, QFont::Bold));
+
+    // Calculate the start position for drawing
+    const QFontMetrics metrics(painter.font());
+    const int middle_x = (chevron[2].x() + chevron[0].x()) / 2;
+    painter.drawText(middle_x - metrics.horizontalAdvance(combined_text) / 2, chevron[0].y() + metrics.height() + 5, combined_text);
+  }
+
   painter.restore();
 }
 
@@ -1083,6 +1128,72 @@ void AnnotatedCameraWidget::drawDrivingPersonalities(QPainter &p) {
   if (imageOpacity > 0.0) {
     drawIcon(p, x, y, profile_image, blackColor(0), imageOpacity);
   }
+
+  p.restore();
+}
+
+void AnnotatedCameraWidget::drawDeveloperUI(QPainter &p) {
+  // Declare the variables
+  const SubMaster &sm = *uiState()->sm;
+  const double currentAcceleration = std::round(sm["carState"].getCarState().getAEgo() * 100) / 100;
+  static const std::vector<std::string> DistanceUnits = {"", " feet", " meters", " meters"};
+  static const std::vector<std::string> NavDistanceUnits = {"", " ft", " m", " m"};
+  static const std::vector<std::string> SpeedUnits = {"", " mph", " km/h", " m/s"};
+  static const double DistanceConversions[] = {0, 3.28084, 1.0, 1.0};
+  static const double SpeedConversions[] = {0, 2.23694, 3.6, 1.0};
+  static double maxAcceleration = 0.0;
+  static auto lastUpdated = std::chrono::steady_clock::now();
+
+  // Update maxAcceleration
+  if (currentAcceleration > maxAcceleration && status == STATUS_ENGAGED) {
+    maxAcceleration = currentAcceleration;
+    lastUpdated = std::chrono::steady_clock::now();
+  }
+
+  // Check if less than 5 seconds have passed since last max acceleration
+  const auto timeDiff = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - lastUpdated).count();
+
+  // Configure the insights
+  const auto createText = [&](const QString &title, double data){
+    return title + QString::number(data * DistanceConversions[developerUI]) +
+    (map_open ? QString::fromStdString(NavDistanceUnits[developerUI]) : QString::fromStdString(DistanceUnits[developerUI]));
+  };
+
+  // Create the insights
+  const QString maxAccText = "Accel: " + QString::number((timeDiff > 5 ? currentAcceleration : maxAcceleration) * SpeedConversions[developerUI]) + QString::fromStdString(SpeedUnits[developerUI]) + 
+                             (map_open ? "" : " - Max: " + QString::number(maxAcceleration * SpeedConversions[developerUI]) + QString::fromStdString(SpeedUnits[developerUI]));
+
+  const QString insightsText = createText((map_open ? QString(" | Obstacle: ") : QString("  |  Obstacle Factor: ")), obstacleDistance) +
+                               (map_open ? " - " : "  -  ") +
+                               createText((map_open ? QString("Stop: ") : QString("Stop Factor: ")), stoppedEquivalence) +
+                               " = " +
+                               createText((map_open ? QString("Follow: ") : QString("Follow Distance: ")), desiredFollow);
+
+  // Prepare and draw insights rectangle
+  const QRect insightsRect(rect().left() - 1, rect().top() - 60, rect().width() + 2, 100);
+  p.save();
+  p.setBrush(QColor(0, 0, 0, 150));
+  p.setOpacity(1.0);
+  p.drawRoundedRect(insightsRect, 30, 30);
+
+  // Set up and draw the text
+  p.setFont(InterFont(30, QFont::DemiBold));
+  p.setRenderHint(QPainter::TextAntialiasing);
+
+  // Calculate the baseline to center the text vertically
+  const QRect adjustedRect = insightsRect.adjusted(0, 27, 0, 27);
+  const int totalTextWidth = p.fontMetrics().width(maxAccText + insightsText);
+  const int textStartPos = adjustedRect.x() + (adjustedRect.width() - totalTextWidth) / 2;
+  const int textHeight = p.fontMetrics().height();
+  const int textBaseLine = adjustedRect.y() + (adjustedRect.height() + textHeight) / 2 - p.fontMetrics().descent();
+
+  // Draw maxAccText with appropriate color
+  p.setPen(timeDiff < 5 ? Qt::red : Qt::white);
+  p.drawText(textStartPos, textBaseLine, maxAccText);
+
+  // Draw insightsText in white color
+  p.setPen(Qt::white);
+  p.drawText(textStartPos + p.fontMetrics().width(maxAccText), textBaseLine, insightsText);
 
   p.restore();
 }

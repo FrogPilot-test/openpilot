@@ -350,5 +350,9 @@ class LongitudinalPlanner:
     longitudinalPlan.conditionalExperimentalMode = self.experimental_mode
     longitudinalPlan.frogpilotTogglesUpdated = self.frogpilot_toggles_updated
     longitudinalPlan.statusValue = self.previous_status_value
+    # LongitudinalPlan variables for onroad driving insights
+    longitudinalPlan.safeObstacleDistance = self.mpc.safe_obstacle_distance
+    longitudinalPlan.stoppedEquivalenceFactor = self.mpc.stopped_equivalence_factor
+    longitudinalPlan.desiredFollowDistance = max(0, self.mpc.safe_obstacle_distance - self.mpc.stopped_equivalence_factor)
 
     pm.send('longitudinalPlan', plan_send)

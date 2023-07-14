@@ -261,6 +261,10 @@ class LongitudinalMpc:
     self.reset()
     self.source = SOURCES[2]
 
+    # Declare variables for onroad driving insights
+    self.safe_obstacle_distance = 0
+    self.stopped_equivalence_factor = 0
+
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.solver.reset()
@@ -394,6 +398,10 @@ class LongitudinalMpc:
       speed_difference = lead_speed - v_ego
       if np.all(speed_difference > lead_speed * 0.2) and np.all(lead_speed < 15):
         t_follow = np.minimum(t_follow, t_follow * ((lead_speed + v_ego) / (lead_distance * speed_difference)))
+
+    # LongitudinalPlan variables for onroad driving insights
+    self.safe_obstacle_distance = int(np.mean(get_safe_obstacle_distance(np.mean(self.x_sol[:,1]), t_follow)))
+    self.stopped_equivalence_factor = int(np.mean(get_stopped_equivalence_factor(personal_tune, np.mean(self.x_sol[:,1]), np.mean(lead_xv_0[:,1]), np.mean(lead_xv_0[:,0]))))
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance

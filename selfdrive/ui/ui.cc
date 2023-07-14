@@ -260,6 +260,11 @@ static void update_state(UIState *s) {
     if (scene.conditional_experimental) {
       scene.conditional_status = longitudinalPlan.getStatusValue();
     }
+    if (scene.developer_ui) {
+      scene.desired_follow = longitudinalPlan.getDesiredFollowDistance();
+      scene.obstacle_distance = longitudinalPlan.getSafeObstacleDistance();
+      scene.stopped_equivalence = longitudinalPlan.getStoppedEquivalenceFactor();
+    }
   }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
@@ -286,6 +291,7 @@ void ui_update_params(UIState *s) {
     scene.conditional_speed_lead = params.getInt("ConditionalExperimentalModeSpeedLead");
     scene.custom_road_ui = params.getBool("CustomRoadUI");
     scene.blind_spot_path = scene.custom_road_ui && params.getBool("BlindSpotPath");
+    scene.developer_ui = params.getInt("DeveloperUI");
     scene.driving_personalities_ui_wheel = params.getBool("DrivingPersonalitiesUIWheel");
     scene.frog_theme = params.getBool("FrogTheme");
     scene.frog_colors = scene.frog_theme && params.getBool("FrogColors");
@@ -324,6 +330,7 @@ void ui_update_params(UIState *s) {
       scene.path_width = params.getInt("PathWidth") / 10.0 * 0.1524;           // Convert from feet to meters
       scene.road_edge_width = params.getInt("RoadEdgesWidth") / 12.0 * 0.1524; // Convert from inches to meters
     }
+    scene.developer_ui = params.getInt("DeveloperUI");
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
   }
