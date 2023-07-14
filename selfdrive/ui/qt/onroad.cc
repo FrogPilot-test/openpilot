@@ -85,7 +85,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 
   // Driving personalities button
   int x = rightHandDM ? rect().right() - (btn_size - 24) / 2 - (UI_BORDER_SIZE * 2) - x_offset : (btn_size - 24) / 2 + (UI_BORDER_SIZE * 2) + x_offset;
-  const int y = rect().bottom() - (scene.conditional_experimental ? 25 : 0) - 140;
+  const int y = rect().bottom() - (scene.conditional_experimental || scene.always_on_lateral ? 25 : 0) - 140;
   // Give the button a 25% offset so it doesn't need to be clicked on perfectly
   const bool isDrivingPersonalitiesClicked = (e->pos() - QPoint(x, y)).manhattanLength() <= btn_size * 1.25 && !isToyotaCar;
 
@@ -202,7 +202,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     margin = 0;
     radius = 0;
   }
-  QRect r = QRect(0 + margin, height() - h + margin - (scene.conditional_experimental && alert.size != cereal::ControlsState::AlertSize::FULL ? 25 : 0), width() - margin*2, h - margin*2);
+  QRect r = QRect(0 + margin, height() - h + margin - (scene.conditional_experimental || scene.always_on_lateral && alert.size != cereal::ControlsState::AlertSize::FULL ? 25 : 0), width() - margin*2, h - margin*2);
 
   QPainter p(this);
 
@@ -295,7 +295,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 
     p.setOpacity(1.0);
     p.setPen(Qt::NoPen);
-    p.setBrush(scene.conditional_status == 1 ? QColor(255, 246, 0, 255) : steeringWheel && experimental_mode ? QColor(218, 111, 37, 241) : QColor(0, 0, 0, 166));
+    p.setBrush(scene.always_on_lateral_active ? QColor(10, 186, 181, 255) : scene.conditional_status == 1 ? QColor(255, 246, 0, 255) : steeringWheel && experimental_mode ? QColor(218, 111, 37, 241) : QColor(0, 0, 0, 166));
     p.drawEllipse(center, btn_size / 2, btn_size / 2);
     p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
     p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
@@ -427,6 +427,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
 
   // FrogPilot properties
+  setProperty("alwaysOnLateral", s.scene.always_on_lateral_active);
   setProperty("bearingDeg", s.scene.bearing_deg);
   setProperty("blindSpotLeft", s.scene.blind_spot_left);
   setProperty("blindSpotRight", s.scene.blind_spot_right);
@@ -571,7 +572,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   }
 
   // FrogPilot status bar
-  if (conditionalExperimental) {
+  if (conditionalExperimental || alwaysOnLateral) {
     drawStatusBar(p);
   }
 }
@@ -705,7 +706,11 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // Paint path edges
   QLinearGradient pe(0, height(), 0, 0);
-  if (conditionalStatus == 1) {
+  if (alwaysOnLateral) {
+    pe.setColorAt(0.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 1.0));
+    pe.setColorAt(0.5, QColor::fromHslF(178 / 360., 0.90, 0.38, 0.5));
+    pe.setColorAt(1.0, QColor::fromHslF(178 / 360., 0.90, 0.38, 0.1));
+  } else if (conditionalStatus == 1) {
     pe.setColorAt(0.0, QColor::fromHslF(58 / 360., 1.00, 0.50, 1.0));
     pe.setColorAt(0.5, QColor::fromHslF(58 / 360., 1.00, 0.50, 0.5));
     pe.setColorAt(1.0, QColor::fromHslF(58 / 360., 1.00, 0.50, 0.1));
@@ -757,7 +762,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   // base icon
   int offset = UI_BORDER_SIZE + btn_size / 2;
   int x = rightHandDM ? width() - offset : offset;
-  int y = height() - offset - (conditionalExperimental ? 25 : 0);
+  int y = height() - offset - (conditionalExperimental || alwaysOnLateral ? 25 : 0);
   float opacity = dmActive ? 0.65 : 0.2;
   drawIcon(painter, x, y, dm_img, blackColor(70), opacity);
 
@@ -946,7 +951,7 @@ void AnnotatedCameraWidget::drawCompass(QPainter &p) {
   constexpr int degreeLabelOffset = circle_offset + 25;
   constexpr int inner_compass = btn_size / 2;
   int x = !rightHandDM ? rect().right() - btn_size / 2 - (UI_BORDER_SIZE * 2) - 10 : btn_size / 2 + (UI_BORDER_SIZE * 2) + 10;
-  const int y = rect().bottom() - 20 - (conditionalExperimental ? 50 : 0) - 140;
+  const int y = rect().bottom() - 20 - (conditionalExperimental || alwaysOnLateral ? 50 : 0) - 140;
 
   // Enable Antialiasing
   p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
@@ -1035,7 +1040,7 @@ void AnnotatedCameraWidget::drawDrivingPersonalities(QPainter &p) {
   constexpr int fadeDuration = 1000; // 1 second
   constexpr int textDuration = 3000; // 3 seconds
   int x = rightHandDM ? rect().right() - (btn_size - 24) / 2 - (UI_BORDER_SIZE * 2) - (muteDM ? 50 : 250) : (btn_size - 24) / 2 + (UI_BORDER_SIZE * 2) + (muteDM ? 50 : 250);
-  const int y = rect().bottom() - (conditionalExperimental ? 25 : 0) - 100;
+  const int y = rect().bottom() - (conditionalExperimental || alwaysOnLateral ? 25 : 0) - 100;
 
   // Enable Antialiasing
   p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
@@ -1088,7 +1093,7 @@ void AnnotatedCameraWidget::drawFrogSignals(QPainter &p) {
   constexpr int signalWidth = 360;
 
   // Calculate the vertical position for the turn signals
-  const int baseYPosition = (height() - signalHeight) / 2 + (conditionalExperimental ? 225 : 300);
+  const int baseYPosition = (height() - signalHeight) / 2 + (conditionalExperimental || alwaysOnLateral ? 225 : 300);
   // Calculate the x-coordinates for the turn signals
   int leftSignalXPosition = 75 + width() - signalWidth - 300 * (blindSpotLeft ? 0 : animationFrameIndex);
   int rightSignalXPosition = -75 + 300 * (blindSpotRight ? 0 : animationFrameIndex);
@@ -1129,7 +1134,7 @@ void AnnotatedCameraWidget::drawRotatingWheel(QPainter &p, int x, int y) {
   // Draw the icon and rotate it alongside the steering wheel
   p.setOpacity(1.0);
   p.setPen(Qt::NoPen);
-  p.setBrush(conditionalStatus == 1 ? QColor(255, 246, 0, 255) : steeringWheel && experimentalMode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(32, 80, 223, 255) : QColor(0, 0, 0, 166));
+  p.setBrush(alwaysOnLateral ? QColor(10, 186, 181, 255) : conditionalStatus == 1 ? QColor(255, 246, 0, 255) : steeringWheel && experimentalMode ? QColor(218, 111, 37, 241) : scene.navigate_on_openpilot ? QColor(32, 80, 223, 255) : QColor(0, 0, 0, 166));
   p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
   p.save();
   p.translate(x, y);
@@ -1156,11 +1161,13 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   // Display the appropriate status
   static QString statusText;
   const QString wheelSuffix = toyotaCar ? ". Double press the \"LKAS\" button to revert" : ". Double tap the screen to revert";
-  if (conditionalExperimental) {
+  if (alwaysOnLateral) {
+    statusText = QString("Always On Lateral active") + (map_open ? "" : QString(". Press the \"Cruise Control\" button to disable"));
+  } else if (conditionalExperimental) {
     statusText = conditionalStatusMap.contains(conditionalStatus) && status != STATUS_DISENGAGED ? conditionalStatusMap[conditionalStatus] : conditionalStatusMap[8];
   }
-  // Add the appropriate suffix if the map isn't being shown
-  if ((conditionalStatus == 1 || conditionalStatus == 2) && !map_open && status != STATUS_DISENGAGED && !statusText.isEmpty()) {
+  // Add the appropriate suffix if always on lateral isn't active and the map isn't being shown
+  if ((conditionalStatus == 1 || conditionalStatus == 2) && !alwaysOnLateral && !map_open && status != STATUS_DISENGAGED && !statusText.isEmpty()) {
     statusText += wheelSuffix;
   }
 

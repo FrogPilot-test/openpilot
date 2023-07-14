@@ -331,6 +331,7 @@ struct CarControl {
   rightBlinker @16: Bool;
 
   # FrogPilot CarControls
+  alwaysOnLateral @17: Bool;
 
   # Any car specific rate limits or quirks applied by
   # the CarController are reflected in actuatorsOutput
@@ -499,6 +500,7 @@ struct CarParams {
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
 
   # FrogPilot CarParams
+  alwaysOnLateral @72 :Bool;
   conditionalExperimentalMode @73 :Bool;
   experimentalModeViaWheel @74 :Bool;
   personalTune @75 :Bool;
