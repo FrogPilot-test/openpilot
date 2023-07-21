@@ -6,15 +6,15 @@ from abc import abstractmethod, ABC
 from json import load
 from typing import Any, Dict, Optional, Tuple, List, Callable, Union
 
-from cereal import car
+from cereal import car, log
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import clip
-from common.params import Params
+from common.params import Params, put_bool_nonblocking, put_nonblocking
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction, CRUISE_LONG_PRESS
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 
@@ -381,6 +381,7 @@ class CarInterfaceBase(ABC):
       events.add(EventName.steerOverride)
 
     # Handle button presses
+    distance_button_pressed = False
     for b in cs_out.buttonEvents:
       # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
       if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
@@ -388,6 +389,10 @@ class CarInterfaceBase(ABC):
       # Disable on rising and falling edge of cancel for both stock and OP long
       if b.type == ButtonType.cancel:
         events.add(EventName.buttonCancel)
+      if b.type == ButtonType.gapAdjustCruise:
+        distance_button_pressed = True
+    if self.CP.openpilotLongitudinalControl:
+      self.CS.update_personality(distance_button_pressed)
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
@@ -438,6 +443,7 @@ class RadarInterfaceBase(ABC):
 class CarStateBase(ABC):
   def __init__(self, CP):
     self.CP = CP
+    self.params = Params()
     self.car_fingerprint = CP.carFingerprint
     self.out = car.CarState.new_message()
 
@@ -456,6 +462,13 @@ class CarStateBase(ABC):
                          A=[[1.0, DT_CTRL], [0.0, 1.0]],
                          C=[1.0, 0.0],
                          K=[[0.17406039], [1.65925647]])
+
+    try:
+      self.longitudinal_personality = int(self.params.get("LongitudinalPersonality", encoding="utf-8"))
+    except (ValueError, TypeError):
+      self.longitudinal_personality = log.LongitudinalPersonality.standard
+    self.distance_button_pressed = False
+    self.distance_button_timer = 0
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -510,6 +523,14 @@ class CarStateBase(ABC):
     self.right_blinker_prev = right_blinker_stalk
 
     return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
+
+  def update_personality(self, distance_button_pressed: bool) -> None:
+    self.distance_button_timer = self.distance_button_timer + 1 if distance_button_pressed else 0
+    if self.distance_button_timer == CRUISE_LONG_PRESS:
+      put_bool_nonblocking("ExperimentalMode", not self.params.get_bool("ExperimentalMode"))
+    elif not distance_button_pressed and self.distance_button_timer > 0:  # falling edge
+      self.longitudinal_personality = (self.longitudinal_personality - 1) % 3
+      put_nonblocking("LongitudinalPersonality", str(self.longitudinal_personality))
 
   @staticmethod
   def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
