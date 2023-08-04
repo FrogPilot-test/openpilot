@@ -37,30 +37,29 @@ const CanMsg GM_ASCM_TX_MSGS[] = {{384, 0, 4}, {1033, 0, 7}, {1034, 0, 7}, {715,
                                   {789, 2, 5},  // ch bus
                                   {0x104c006c, 3, 3}, {0x10400060, 3, 5}};  // gmlan
 
-const CanMsg GM_CAM_TX_MSGS[] = {{384, 0, 4},  // pt bus
-const CanMsg GM_CAM_TX_MSGS[] = {{384, 0, 4}, {512, 0, 6},  // pt bus
+const CanMsg GM_CAM_TX_MSGS[] = {{384, 0, 4}, {512, 0, 6}, {481, 0, 7},  // pt bus
                                  {481, 2, 7}, {388, 2, 8}};  // camera bus
 
-const CanMsg GM_CAM_LONG_TX_MSGS[] = {{384, 0, 4}, {789, 0, 5}, {715, 0, 8}, {880, 0, 6},  // pt bus
-                                      {388, 2, 8}};  // camera bus
 const CanMsg GM_CAM_LONG_TX_MSGS[] = {{384, 0, 4}, {789, 0, 5}, {715, 0, 8}, {880, 0, 6}, {512, 0, 6}, // pt bus
+                                      {481, 2, 7}, {388, 2, 8}};  // camera bus
+
+const CanMsg GM_CC_LONG_TX_MSGS[] = {{384, 0, 4}, {481, 0, 7},  // pt bus
+                                     {388, 2, 8}, {481, 2, 7}};  // camera bus
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
 AddrCheckStruct gm_addr_checks[] = {
-  {.msg = {{0x184, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0x34A, 0, 5, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0x1E1, 0, 7, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0xBE, 0, 6, .expected_timestep = 100000U},    // Volt, Silverado, Acadia Denali
-           {0xBE, 0, 7, .expected_timestep = 100000U},    // Bolt EUV
-           {0xBE, 0, 8, .expected_timestep = 100000U}}},  // Escalade
-  {.msg = {{0x1C4, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
-  {.msg = {{0xC9, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+  {.msg = {{388, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+  {.msg = {{842, 0, 5, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+  {.msg = {{481, 0, 7, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+  {.msg = {{241, 0, 6, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+  {.msg = {{452, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
 };
 #define GM_RX_CHECK_LEN (sizeof(gm_addr_checks) / sizeof(gm_addr_checks[0]))
 addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 
 const uint16_t GM_PARAM_HW_CAM = 1;
 const uint16_t GM_PARAM_HW_CAM_LONG = 2;
+const uint16_t GM_PARAM_CC_LONG = 4;
 const uint16_t GM_PARAM_HW_ASCM_LONG = 8;
 const uint16_t GM_PARAM_NO_CAMERA = 16;
 const uint16_t GM_PARAM_NO_ACC = 32;
@@ -76,6 +75,7 @@ enum {GM_ASCM, GM_CAM} gm_hw = GM_ASCM;
 bool gm_cam_long = false;
 bool gm_pcm_cruise = false;
 bool gm_has_acc = true;
+bool gm_cc_long = false;
 bool gm_skip_relay_check = false;
 bool gm_force_ascm = false;
 
@@ -86,7 +86,7 @@ static int gm_rx_hook(CANPacket_t *to_push) {
   if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);
 
-    if (addr == 0x184) {
+    if (addr == 388) {
       int torque_driver_new = ((GET_BYTE(to_push, 6) & 0x7U) << 8) | GET_BYTE(to_push, 7);
       torque_driver_new = to_signed(torque_driver_new, 11);
       // update array of samples
@@ -94,14 +94,14 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     }
 
     // sample rear wheel speeds
-    if (addr == 0x34A) {
+    if (addr == 842) {
       int left_rear_speed = (GET_BYTE(to_push, 0) << 8) | GET_BYTE(to_push, 1);
       int right_rear_speed = (GET_BYTE(to_push, 2) << 8) | GET_BYTE(to_push, 3);
       vehicle_moving = (left_rear_speed > GM_STANDSTILL_THRSLD) || (right_rear_speed > GM_STANDSTILL_THRSLD);
     }
 
     // ACC steering wheel buttons (GM_CAM is tied to the PCM)
-    if ((addr == 0x1E1) && !gm_pcm_cruise) {
+    if ((addr == 481) && (!gm_pcm_cruise || gm_cc_long)) {
       int button = (GET_BYTE(to_push, 5) & 0x70U) >> 4;
 
       // enter controls on falling edge of set or rising edge of resume (avoids fault)
@@ -121,11 +121,11 @@ static int gm_rx_hook(CANPacket_t *to_push) {
 
     // Reference for brake pressed signals:
     // https://github.com/commaai/openpilot/blob/master/selfdrive/car/gm/carstate.py
-    if ((addr == 0xBE) && (gm_hw == GM_ASCM)) {
+    if ((addr == 190) && (gm_hw == GM_ASCM)) {
       brake_pressed = GET_BYTE(to_push, 1) >= 8U;
     }
 
-    if ((addr == 0xC9) && (gm_hw == GM_CAM)) {
+    if ((addr == 201) && (gm_hw == GM_CAM)) {
       bool cruise_available = GET_BIT(to_push, 29U) != 0U;
       lateral_controls_allowed = cruise_available;
       brake_pressed = GET_BIT(to_push, 40U) != 0U;
@@ -169,7 +169,7 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     bool stock_ecu_detected = (addr == 384);  // ASCMLKASteeringCmd
 
     // Check ASCMGasRegenCmd only if we're blocking it
-    if (!gm_pcm_cruise && (addr == 0x2CB)) {
+    if (!gm_pcm_cruise && (addr == 715)) {
       stock_ecu_detected = true;
     }
     generic_rx_checks(stock_ecu_detected);
@@ -189,7 +189,9 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
 
   if (gm_hw == GM_CAM) {
-    if (gm_cam_long) {
+    if (gm_cc_long) {
+      tx = msg_allowed(to_send, GM_CC_LONG_TX_MSGS, sizeof(GM_CC_LONG_TX_MSGS)/sizeof(GM_CC_LONG_TX_MSGS[0]));
+    } else if (gm_cam_long) {
       tx = msg_allowed(to_send, GM_CAM_LONG_TX_MSGS, sizeof(GM_CAM_LONG_TX_MSGS)/sizeof(GM_CAM_LONG_TX_MSGS[0]));
     } else {
       tx = msg_allowed(to_send, GM_CAM_TX_MSGS, sizeof(GM_CAM_TX_MSGS)/sizeof(GM_CAM_TX_MSGS[0]));
@@ -199,7 +201,7 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   }
 
   // BRAKE: safety check
-  if (addr == 0x315) {
+  if (addr == 789) {
     int brake = ((GET_BYTE(to_send, 0) & 0xFU) << 8) + GET_BYTE(to_send, 1);
     brake = (0x1000 - brake) & 0xFFF;
     if (longitudinal_brake_checks(brake, *gm_long_limits)) {
@@ -208,7 +210,7 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   }
 
   // LKA STEER: safety check
-  if (addr == 0x180) {
+  if (addr == 384) {
     int desired_torque = ((GET_BYTE(to_send, 0) & 0x7U) << 8) + GET_BYTE(to_send, 1);
     desired_torque = to_signed(desired_torque, 11);
 
@@ -227,7 +229,7 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   }
 
   // GAS/REGEN: safety check
-  if (addr == 0x2CB) {
+  if (addr == 715) {
     bool apply = GET_BIT(to_send, 0U) != 0U;
     int gas_regen = ((GET_BYTE(to_send, 2) & 0x7FU) << 5) + ((GET_BYTE(to_send, 3) & 0xF8U) >> 3);
 
@@ -242,12 +244,16 @@ static int gm_tx_hook(CANPacket_t *to_send) {
   }
 
   // BUTTONS: used for resume spamming and cruise cancellation with stock longitudinal
-  if ((addr == 481) && gm_pcm_cruise) {
-  if ((addr == 481) && (gm_pcm_cruise || gas_interceptor_detected)) {
+  if ((addr == 481) && (gm_pcm_cruise || gas_interceptor_detected || gm_cc_long)) {
     int button = (GET_BYTE(to_send, 5) >> 4) & 0x7U;
 
-    bool allowed_cancel = (button == 6) && cruise_engaged_prev;
-    if (!allowed_cancel) {
+    bool allowed_btn = (button == GM_BTN_CANCEL) && cruise_engaged_prev;
+    // For standard CC, allow spamming of SET / RESUME
+    if (gm_cc_long) {
+      allowed_btn |= cruise_engaged_prev && (button == GM_BTN_SET || button == GM_BTN_RESUME || button == GM_BTN_UNPRESS);
+    }
+
+    if (!allowed_btn) {
       tx = 0;
     }
   }
@@ -263,7 +269,7 @@ static int gm_fwd_hook(int bus_num, int addr) {
   if (gm_hw == GM_CAM) {
     if (bus_num == 0) {
       // block PSCMStatus; forwarded through openpilot to hide an alert from the camera
-      bool is_pscm_msg = (addr == 0x184);
+      bool is_pscm_msg = (addr == 388);
       if (!is_pscm_msg) {
         bus_fwd = 2;
       }
@@ -271,8 +277,8 @@ static int gm_fwd_hook(int bus_num, int addr) {
 
     if (bus_num == 2) {
       // block lkas message and acc messages if gm_cam_long, forward all others
-      bool is_lkas_msg = (addr == 0x180);
-      bool is_acc_msg = (addr == 0x315) || (addr == 0x2CB) || (addr == 0x370);
+      bool is_lkas_msg = (addr == 384);
+      bool is_acc_msg = (addr == 789) || (addr == 715) || (addr == 880);
       int block_msg = is_lkas_msg || (is_acc_msg && gm_cam_long);
       if (!block_msg) {
         bus_fwd = 0;
@@ -295,10 +301,9 @@ static const addr_checks* gm_init(uint16_t param) {
   } else {
   }
 
-#ifdef ALLOW_DEBUG
-  gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG);
-#endif
-  gm_pcm_cruise = (gm_hw == GM_CAM) && !gm_cam_long;
+  gm_cc_long = GET_FLAG(param, GM_PARAM_CC_LONG);
+  gm_cam_long = GET_FLAG(param, GM_PARAM_HW_CAM_LONG) && !gm_cc_long;
+  gm_pcm_cruise = (gm_hw == GM_CAM) && (!gm_cam_long || gm_cc_long);
   gm_skip_relay_check = GET_FLAG(param, GM_PARAM_NO_CAMERA);
   gm_has_acc = !GET_FLAG(param, GM_PARAM_NO_ACC);
   return &gm_rx_checks;
