@@ -29,8 +29,7 @@ const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
 // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
 // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
-const int GM_GAS_INTERCEPTOR_THRESHOLD = 506; // (610 + 306.25) / 2 ratio between offset and gain from dbc file
-const int GM_ASCM_GAS_INTERCEPTOR_THRESHOLD = 512;
+const int GM_GAS_INTERCEPTOR_THRESHOLD = 514; // (610 + 306.25) / 2 ratio between offset and gain from dbc file
 #define GM_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U) // avg between 2 tracks
 
 const CanMsg GM_ASCM_TX_MSGS[] = {{384, 0, 4}, {1033, 0, 7}, {1034, 0, 7}, {715, 0, 8}, {880, 0, 6}, {512, 0, 6},  // pt bus
@@ -149,7 +148,11 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     // Cruise check for CC only cars
     if ((addr == 977) && !gm_has_acc) {
       bool cruise_engaged = (GET_BYTE(to_push, 4) >> 7) != 0U;
-      pcm_cruise_check(cruise_engaged);
+      if (gm_cc_long) {
+        pcm_cruise_check(cruise_engaged);
+      } else {
+        cruise_engaged_prev = cruise_engaged;
+      }
     }
 
     if (addr == 189) {
@@ -160,12 +163,9 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     if (addr == 513) {
       gas_interceptor_detected = 1;
       int gas_interceptor = GM_GET_INTERCEPTOR(to_push);
-      if (gm_hw == GM_ASCM || gm_force_ascm) {
-        gas_pressed = gas_interceptor > GM_ASCM_GAS_INTERCEPTOR_THRESHOLD;
-      } else {
-        gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
-      }
+      gas_pressed = gas_interceptor > GM_GAS_INTERCEPTOR_THRESHOLD;
       gas_interceptor_prev = gas_interceptor;
+      gm_pcm_cruise = false;
     }
 
     bool stock_ecu_detected = (addr == 384);  // ASCMLKASteeringCmd
