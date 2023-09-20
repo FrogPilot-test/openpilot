@@ -137,7 +137,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 
   // Change cruise control increments button
   const QRect maxSpeedRect(1, 1, 350, 350);
-  const bool isMaxSpeedClicked = maxSpeedRect.contains(e->pos()) && isToyotaCar;
+  const bool isMaxSpeedClicked = maxSpeedRect.contains(e->pos());
 
   // Hide speed button
   const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
