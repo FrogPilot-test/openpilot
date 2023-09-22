@@ -632,13 +632,10 @@ class Controls:
 
     # Always on lateral
     if self.always_on_lateral:
-      self.cruiseState_previously_enabled &= CS.cruiseState.available
-      self.cruiseState_previously_enabled |= CS.cruiseState.enabled
       gear = car.CarState.GearShifter
       gear_check = CS.gearShifter not in (gear.neutral, gear.park, gear.reverse, gear.unknown)
-      longitudinal_check = self.CP.openpilotLongitudinalControl or self.cruiseState_previously_enabled
       signal_check = not (CS.leftBlinker or CS.rightBlinker) or not self.pause_lateral_on_signal
-      CC.alwaysOnLateral = CS.cruiseState.available and gear_check and longitudinal_check and signal_check
+      CC.alwaysOnLateral = CS.cruiseState.available and gear_check and signal_check
       if CC.alwaysOnLateral:
         self.current_alert_types.append(ET.WARNING)
 
