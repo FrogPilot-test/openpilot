@@ -105,6 +105,7 @@ class LongitudinalPlanner:
     self.acceleration_profile = self.CP.accelerationProfile
     self.increased_stopping_distance = self.params.get_int("IncreasedStoppingDistance") * (1 if self.is_metric else 0.3048)
     self.conditional_experimental_mode = self.CP.conditionalExperimental
+    self.green_light_alert = self.params.get_bool("GreenLightAlert")
     self.custom_personalities = self.params.get_bool("CustomDrivingPersonalities")
     self.aggressive_follow = self.params.get_int("AggressivePersonality") / 10
     self.standard_follow = self.params.get_int("StandardPersonality") / 10
@@ -113,6 +114,8 @@ class LongitudinalPlanner:
     self.standard_jerk = self.params.get_int("StandardJerk") / 10
     self.relaxed_jerk = self.params.get_int("RelaxedJerk") / 10
     self.frogpilot_toggles_updated = False
+    self.green_light = False
+    self.stopped_for_light_previous = False
     self.read_param()
     # Set variables for Conditional Experimental Mode
     if self.conditional_experimental_mode:
@@ -251,6 +254,12 @@ class LongitudinalPlanner:
     speed_difference = radarstate.leadOne.vRel * 3.6
     standstill = carstate.standstill
 
+    # Green light alert
+    if self.green_light_alert:
+      stopped_for_light = self.stop_sign_and_light(carstate, lead, lead_distance, modeldata, v_ego, v_lead) and standstill
+      self.green_light = not stopped_for_light and self.stopped_for_light_previous and not lead
+      self.stopped_for_light_previous = stopped_for_light
+
     # Conditional Experimental Mode
     if self.conditional_experimental_mode and sm['controlsState'].enabled:
       # Set the value of "overridden"
@@ -386,5 +395,6 @@ class LongitudinalPlanner:
 
     # FrogPilot longitudinalPlan variables
     longitudinalPlan.conditionalExperimental = self.experimental_mode
+    longitudinalPlan.greenLight = self.green_light
 
     pm.send('longitudinalPlan', plan_send)
