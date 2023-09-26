@@ -128,6 +128,8 @@ class Controls:
     self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
     self.frog_sounds = self.custom_sounds == 1
 
+    self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
+
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
 
@@ -491,7 +493,7 @@ class Controls:
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
 
-    self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
+    self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric, self.reverse_cruise_increase)
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -600,6 +602,8 @@ class Controls:
     if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
       self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
       self.frog_sounds = self.custom_sounds == 1
+      self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
+    CC.reverseCruise = self.reverse_cruise_increase
 
     # Check which actuators can be enabled
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
