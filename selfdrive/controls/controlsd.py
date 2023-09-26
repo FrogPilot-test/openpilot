@@ -81,12 +81,17 @@ class Controls:
     # FrogPilot variables
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
+    fire_the_babysitter = self.params.get_bool("FireTheBabysitter")
+    mute_dm = fire_the_babysitter and self.params.get_bool("MuteDM")
+    self.mute_overheat = fire_the_babysitter and self.params.get_bool("MuteSystemOverheat")
 
     self.sm = sm
     if self.sm is None:
       ignore = ['testJoystick']
       if SIMULATION:
         ignore += ['driverCameraState', 'managerState']
+      if mute_dm:
+        ignore += ['driverMonitoringState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
@@ -266,7 +271,7 @@ class Controls:
       self.events.add_from_msg(CS.events)
 
     # Create events for temperature, disk space, and memory
-    if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
+    if self.sm['deviceState'].thermalStatus >= ThermalStatus.red and not self.mute_overheat:
       self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
       # under 7% of space free no enable allowed

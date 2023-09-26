@@ -85,7 +85,8 @@ def main():
   # there exists a race condition when two processes try to create a
   # SNPE model runner at the same time, wait for dmonitoringmodeld to finish
   cloudlog.warning("waiting for dmonitoringmodeld to initialize")
-  if not Params().get_bool("DmModelInitialized", True):
+  params = Params()
+  if not params.get_bool("DmModelInitialized", True) and not (params.get_bool("FireTheBabysitter") and params.get_bool("MuteDM")):
     return
 
   model = ModelState()
