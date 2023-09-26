@@ -108,6 +108,9 @@ private:
   bool wide_cam_requested = false;
 
   // FrogPilot variables
+  bool accelerationPath;
+  bool blindSpotLeft;
+  bool blindSpotRight;
   bool experimentalMode;
   bool mapOpen;
   bool muteDM;
