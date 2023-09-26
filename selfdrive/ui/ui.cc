@@ -249,6 +249,7 @@ void ui_update_params(UIState *s) {
     scene.custom_colors = scene.custom_theme ? params.getInt("CustomColors") : 0;
     scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
 
+    scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.wide_camera_disabled = params.getBool("WideCameraDisable");
     toggles_checked = true;
