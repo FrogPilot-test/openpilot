@@ -213,6 +213,9 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     const auto carParams = sm["carParams"].getCarParams();
     scene.longitudinal_control = carParams.getOpenpilotLongitudinalControl();
+    if (scene.longitudinal_control) {
+      scene.driving_personalities_ui_wheel = carParams.getDrivingPersonalitiesUIWheel();
+    }
   }
   if (sm.updated("carState")) {
     const auto carState = sm["carState"].getCarState();
@@ -289,6 +292,7 @@ void ui_update_params(UIState *s) {
     scene.unlimited_road_ui_length = scene.custom_road_ui && params.getBool("UnlimitedLength");
 
     scene.mute_dm = params.getBool("FireTheBabysitter") && params.getBool("MuteDM");
+    scene.personality_profile = params.getInt("LongitudinalPersonality");
     scene.rotating_wheel = params.getBool("RotatingWheel");
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
@@ -316,6 +320,9 @@ void ui_update_live_params(UIState *s) {
       scene.path_edge_width = params.getInt("PathEdgeWidth");
       scene.path_width = params.getInt("PathWidth") / 10.0 * (scene.is_metric ? 0.5 : 0.1524);
       scene.road_edge_width = params.getInt("RoadEdgesWidth") / 12.0 * conversion;
+    }
+    if (scene.driving_personalities_ui_wheel && !scene.toyota_car) {
+      scene.personality_profile = params.getInt("LongitudinalPersonality");
     }
     scene.screen_brightness = params.getInt("ScreenBrightness");
     scene.steering_wheel = params.getInt("SteeringWheel");
