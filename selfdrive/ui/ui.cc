@@ -250,6 +250,7 @@ void ui_update_params(UIState *s) {
     scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
 
     scene.screen_brightness = params.getInt("ScreenBrightness");
+    scene.wide_camera_disabled = params.getBool("WideCameraDisable");
     toggles_checked = true;
   }
 }
