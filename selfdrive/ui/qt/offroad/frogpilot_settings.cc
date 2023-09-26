@@ -17,6 +17,7 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
   mainLayout->addWidget(whiteHorizontalLine());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
+    {"ConditionalExperimental", "Conditional Experimental Mode", "Automatically activate 'Experimental Mode' based on specified conditions.", "../assets/offroad/icon_conditional.png"},
     {"CustomDrivingPersonalities", "Custom Driving Personalities", "Customize the driving personality profiles to your liking.", "../assets/offroad/icon_custom.png"},
     {"DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png"},
     {"DrivingPersonalitiesUIWheel", "Driving Personalities Via UI / Wheel", "Switch driving personalities using the 'Distance' button on the steering wheel (Toyota/Lexus Only) or via the onroad UI for other makes.\n\n1 bar = Aggressive\n2 bars = Standard\n3 bars = Relaxed", "../assets/offroad/icon_distance.png"},
@@ -30,7 +31,18 @@ FrogPilotControlsPanel::FrogPilotControlsPanel(QWidget *parent) : FrogPilotPanel
 
   for (const auto &[key, label, desc, icon] : toggles) {
     ParamControl *control = createParamControl(key, label, desc, icon, this);
-    if (key == "CustomDrivingPersonalities") {
+    if (key == "ConditionalExperimental") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new ConditionalSpeed(), new ConditionalSpeedLead()),
+      });
+      createSubButtonControl(key, {
+        {"ConditionalCurves", "Curves"},
+        {"ConditionalCurvesLead", "Curves W/ Lead"},
+        {"ConditionalSlowerLead", "Slower Lead"},
+        {"ConditionalStopLights", "Stop Lights"},
+        {"ConditionalSignal", "Turn Signal"}
+      }, mainLayout);
+    } else if (key == "CustomDrivingPersonalities") {
       createSubControl(key, label, desc, icon, {
         createDualParamControl(new AggressivePersonality(), new AggressiveJerk()),
         createDualParamControl(new StandardPersonality(), new StandardJerk()),

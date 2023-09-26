@@ -194,6 +194,18 @@ ParamController(AggressivePersonality, "AggressivePersonality", "Time", "Set the
   return std::clamp(v, 10, 50);
 )
 
+ParamController(ConditionalSpeed, "ConditionalSpeed", "Below", "Switch to 'Experimental Mode' below this speed when there is no lead vehicle.", "../assets/offroad/icon_blank.png",
+  const int speed = params.getInt("ConditionalSpeed");
+  return speed == 0 ? "Off" : QString::number(speed) + (isMetric ? " kph" : " mph");,
+  return std::clamp(v, 0, isMetric ? 150 : 99);
+)
+
+ParamController(ConditionalSpeedLead, "ConditionalSpeedLead", "With Lead", "Switch to 'Experimental Mode' below this speed when there is a lead vehicle.", "../assets/offroad/icon_blank.png",
+  const int speedLead = params.getInt("ConditionalSpeedLead");
+  return speedLead == 0 ? "Off" : QString::number(speedLead) + (isMetric ? " kph" : " mph");,
+  return std::clamp(v, 0, isMetric ? 150 : 99);
+)
+
 ParamController(CustomColors, "CustomColors", "Colors ", "Replace the stock openpilot colors with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
   const int colors = params.getInt("CustomColors");
   return colors == 0 ? "Stock" : colors == 1 ? "Frog" : "Tesla";,

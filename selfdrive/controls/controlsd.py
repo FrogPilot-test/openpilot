@@ -129,6 +129,7 @@ class Controls:
     self.frog_sounds = self.custom_sounds == 1
 
     self.average_desired_curvature = self.CP.pfeiferjDesiredCurvatures
+    self.conditional_experimental_mode = self.CP.conditionalExperimental
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
     self.nnff = self.CP.twilsoncoNNFF
 
@@ -886,7 +887,11 @@ class Controls:
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
     self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+    if self.CP.openpilotLongitudinalControl:
+      if self.conditional_experimental_mode:
+        self.experimental_mode = self.sm['longitudinalPlan'].conditionalExperimental
+      else:
+        self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
