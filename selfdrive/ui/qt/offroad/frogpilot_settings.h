@@ -178,6 +178,12 @@ private: \
   int newValue(int v) { newValueFunc; } \
 };
 
+ParamController(AccelerationProfile, "AccelerationProfile", "   Acceleration Profile", "Change the rate at which openpilot accelerates with either a sporty or more eco friendly profile.", "../assets/offroad/icon_blank.png",
+  const int profile = params.getInt("AccelerationProfile");
+  return profile == 1 ? "Eco" : profile == 2 ? "Normal" : "Sport";,
+  return std::clamp(v, 1, 3);
+)
+
 ParamController(CustomColors, "CustomColors", "Colors ", "Replace the stock openpilot colors with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
   const int colors = params.getInt("CustomColors");
   return colors == 0 ? "Stock" : colors == 1 ? "Frog" : "Tesla";,
