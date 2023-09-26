@@ -495,6 +495,7 @@ def thermald_thread(end_event, hw_queue) -> None:
         "LaneLinesWidth": "4",
         "LateralTuning": "1",
         "LongitudinalTuning": "1",
+        "LowerVolt": "0",
         "MuteDM": "1",
         "MuteDoor": "1",
         "MuteSeatbelt": "1",
