@@ -177,3 +177,27 @@ private: \
   QString getValueStr() { getValueStrFunc; } \
   int newValue(int v) { newValueFunc; } \
 };
+
+ParamController(CustomColors, "CustomColors", "Colors ", "Replace the stock openpilot colors with a custom color scheme.\n\nWant to submit your own color scheme? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int colors = params.getInt("CustomColors");
+  return colors == 0 ? "Stock" : colors == 1 ? "Frog" : "Tesla";,
+  return v >= 0 ? v % 3 : 2;
+)
+
+ParamController(CustomIcons, "CustomIcons", "Icons", "Replace the stock openpilot icons with a custom icon pack.\n\nWant to submit your own icon pack? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int icons = params.getInt("CustomIcons");
+  return icons == 0 ? "Stock" : icons == 1 ? "Frog" : "Tesla";,
+  return v >= 0 ? v % 3 : 2;
+)
+
+ParamController(CustomSignals, "CustomSignals", "Signals", "Enable a custom turn signal animation.\n\nWant to submit your own turn signal animation? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int turnSignals = params.getInt("CustomSignals");
+  return turnSignals == 0 ? "Stock" : "Frog";,
+  return v >= 0 ? v % 2 : 1;
+)
+
+ParamController(CustomSounds, "CustomSounds", "Sounds", "Replace the stock openpilot sounds with a custom sound pack.\n\nWant to submit your own custom sound pack? Post it in the 'feature-request' channel on the FrogPilot Discord!", "../assets/offroad/icon_blank.png",
+  const int sounds = params.getInt("CustomSounds");
+  return sounds == 0 ? "Stock" : sounds == 1 ? "Frog" : "Tesla";,
+  return v >= 0 ? v % 3 : 2;
+)

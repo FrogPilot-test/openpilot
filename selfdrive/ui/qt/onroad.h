@@ -108,6 +108,8 @@ private:
   // FrogPilot variables
   bool experimentalMode;
   bool mapOpen;
+  int customColors;
+  std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
 
 protected:
   void paintGL() override;
