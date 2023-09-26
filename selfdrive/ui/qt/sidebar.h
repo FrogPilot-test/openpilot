@@ -62,6 +62,8 @@ private:
 
   // FrogPilot variables
   bool isCustomTheme;
+  bool isFahrenheit;
+  bool isNumericalTemp;
   int customColors;
   int customIcons;
   Params params;

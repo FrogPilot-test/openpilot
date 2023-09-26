@@ -41,6 +41,9 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
 
   // FrogPilot variables
+  isFahrenheit = params.getBool("Fahrenheit");
+  isNumericalTemp = params.getBool("NumericalTemp");
+
   isCustomTheme = params.getBool("CustomTheme");
   customColors = isCustomTheme ? params.getInt("CustomColors") : 0;
   customIcons = isCustomTheme ? params.getInt("CustomIcons") : 0;
@@ -69,7 +72,12 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
-  if (onroad && home_btn.contains(event->pos())) {
+  QRect tempRect = {30, 338, 240, 126};
+  if (tempRect.contains(event->pos()) && isNumericalTemp) {
+    isFahrenheit = !isFahrenheit;
+    params.putBool("Fahrenheit", isFahrenheit);
+    update();
+  } else if (onroad && home_btn.contains(event->pos())) {
     flag_pressed = true;
     update();
   } else if (settings_btn.contains(event->pos())) {
@@ -119,6 +127,8 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
   // FrogPilot properties
+  const int maxTempC = deviceState.getMaxTempC();
+  const QString max_temp = isFahrenheit ? QString::number(maxTempC * 9 / 5 + 32) + "°F" : QString::number(maxTempC) + "°C";
   const QColor theme_color = currentColors[0];
 
   ItemStatus connectStatus;
@@ -132,12 +142,12 @@ void Sidebar::updateState(const UIState &s) {
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
-  ItemStatus tempStatus = {{tr("TEMP"), tr("HIGH")}, danger_color};
+  ItemStatus tempStatus = {{tr("TEMP"), isNumericalTemp ? max_temp : tr("HIGH")}, danger_color};
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
     tempStatus = {{tr("TEMP"), isNumericalTemp ? max_temp : tr("GOOD")}, theme_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempStatus = {{tr("TEMP"), tr("OK")}, warning_color};
+    tempStatus = {{tr("TEMP"), isNumericalTemp ? max_temp : tr("OK")}, warning_color};
   }
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
