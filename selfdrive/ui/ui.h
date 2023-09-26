@@ -165,6 +165,7 @@ typedef struct UIScene {
   bool driving_personalities_ui_wheel;
   bool enabled;
   bool experimental_mode;
+  bool experimental_mode_via_wheel;
   bool map_open;
   bool mute_dm;
   bool rotating_wheel;
