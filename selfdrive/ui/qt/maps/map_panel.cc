@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QWidget>
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_settings.h"
 #include "selfdrive/ui/qt/util.h"
@@ -40,4 +41,9 @@ void MapPanel::toggleMapSettings() {
   content_stack->setCurrentIndex(new_index);
   emit mapPanelRequested();
   show();
+}
+
+void MapPanel::setVisible(bool visible) {
+  QFrame::setVisible(visible);
+  Params("/dev/shm/params").putBool("MapOpen", visible);
 }

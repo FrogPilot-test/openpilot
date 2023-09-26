@@ -198,8 +198,32 @@ static void update_state(UIState *s) {
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaStates")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
+  if (sm.updated("carControl")) {
+    const auto carControl = sm["carControl"].getCarControl();
+  }
   if (sm.updated("carParams")) {
-    scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
+    const auto carParams = sm["carParams"].getCarParams();
+    scene.longitudinal_control = carParams.getOpenpilotLongitudinalControl();
+  }
+  if (sm.updated("carState")) {
+    const auto carState = sm["carState"].getCarState();
+    if (scene.started) {
+      scene.toyota_car = carState.getToyotaCar();
+    }
+  }
+  if (sm.updated("controlsState")) {
+    const auto controlsState = sm["controlsState"].getControlsState();
+    scene.enabled = controlsState.getEnabled();
+    scene.experimental_mode = controlsState.getExperimentalMode();
+  }
+  if (sm.updated("gpsLocationExternal")) {
+    const auto gpsLocationExternal = sm["gpsLocationExternal"].getGpsLocationExternal();
+  }
+  if (sm.updated("lateralPlan")) {
+    const auto lateralPlan = sm["lateralPlan"].getLateralPlan();
+  }
+  if (sm.updated("longitudinalPlan")) {
+    const auto longitudinalPlan = sm["longitudinalPlan"].getLongitudinalPlan();
   }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
@@ -213,6 +237,34 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+
+  // FrogPilot variables
+  static UIScene &scene = s->scene;
+  static bool toggles_checked = false;
+  if (!scene.default_params_set) {
+    scene.default_params_set = params.getBool("DefaultParamsSet");
+  }
+  if (!toggles_checked && scene.default_params_set) {
+    toggles_checked = true;
+  }
+}
+
+void ui_update_live_params(UIState *s) {
+  static UIScene &scene = s->scene;
+  static auto params = Params();
+  static Params params_memory = Params("/dev/shm/params");
+
+  // Update FrogPilot variables when they are changed
+  static bool live_toggles_checked = false;
+  if (params_memory.getBool("FrogPilotTogglesUpdated")) {
+    if (live_toggles_checked && scene.enabled) {
+      params_memory.putBool("FrogPilotTogglesUpdated", false);
+    }
+    live_toggles_checked = !live_toggles_checked;
+  }
+
+  // FrogPilot live variables that need to be constantly checked
+  scene.map_open = params_memory.getBool("MapOpen");
 }
 
 void UIState::updateStatus() {
@@ -241,7 +293,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan", "carControl",
+    "gpsLocationExternal", "lateralPlan", "longitudinalPlan"
   });
 
   Params params;
@@ -261,6 +314,7 @@ void UIState::update() {
   update_sockets(this);
   update_state(this);
   updateStatus();
+  ui_update_live_params(uiState());
 
   if (sm->frame % UI_FREQ == 0) {
     watchdog_kick(nanos_since_boot());

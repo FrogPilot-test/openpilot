@@ -451,6 +451,83 @@ def thermald_thread(end_event, hw_queue) -> None:
     if not os.path.isfile('/data/openpilot/prebuilt'):
       os.system(f"touch {'/data/openpilot/prebuilt'}")
 
+    # Set default FrogPilot paramaters if they're not set yet
+    if not params.get_bool("DefaultParamsSet") and params.get("CompletedTrainingVersion") == training_version:
+      default_values = {
+        "AccelerationPath": "0",
+        "AccelerationProfile": "3",
+        "AggressiveAcceleration": "1",
+        "AggressiveJerk": "5",
+        "AggressivePersonality": "12",
+        "AlwaysOnLateral": "1",
+        "AlwaysOnLateralMain": "1",
+        "AverageDesiredCurvature": "0",
+        "BlindSpotPath": "1",
+        "Compass": "1",
+        "ConditionalExperimental": "1",
+        "ConditionalCurves": "1",
+        "ConditionalCurvesLead": "0",
+        "ConditionalSlowerLead": "0",
+        "ConditionalSpeed": "0",
+        "ConditionalSpeedLead": "0",
+        "ConditionalStopLights": "1",
+        "ConditionalSignal": "1",
+        "CustomColors": "1",
+        "CustomIcons": "1",
+        "CustomSignals": "1",
+        "CustomSounds": "1",
+        "CustomTheme": "1",
+        "CustomDrivingPersonalities": "1",
+        "CustomRoadUI": "1",
+        "DeveloperUI": "0",
+        "DeviceShutdownTimer": "9",
+        "DisableAllLogging": "0",
+        "DrivingPersonalitiesUIWheel": "1",
+        "ExperimentalModeViaWheel": "1",
+        "FireTheBabysitter": "0",
+        "GreenLightAlert": "0",
+        "IncreasedStoppingDistance": "3",
+        "LaneChangeTimer": "0",
+        "LaneDetection": "1",
+        "LaneLinesWidth": "4",
+        "LateralTuning": "1",
+        "LongitudinalTuning": "1",
+        "MuteDM": "1",
+        "MuteDoor": "1",
+        "MuteSeatbelt": "1",
+        "MuteSystemOverheat": "1",
+        "NNFF": "0",
+        "NudgelessLaneChange": "1",
+        "NumericalTemp": "1",
+        "OneLaneChange": "1",
+        "PauseLateralOnSignal": "0",
+        "PathEdgeWidth": "20",
+        "PathWidth": "61",
+        "RelaxedJerk": "50",
+        "RelaxedPersonality": "30",
+        "RoadEdgesWidth": "2",
+        "RotatingWheel": "1",
+        "ScreenBrightness": "101",
+        "Sidebar": "1",
+        "SilentMode": "0",
+        "SmootherBraking": "1",
+        "SNGHack": "0",
+        "StandardJerk": "10",
+        "StandardPersonality": "15",
+        "SteeringWheel": "1",
+        "TSS2Tune": "1",
+        "TurnDesires": "1",
+        "UnlimitedLength": "1",
+        "WideCameraDisable": "1",
+        "ZSS": "0",
+      }
+      # Check each key and if it is None or empty, assign the default value
+      for key in default_values:
+        if not params.get(key):
+          params.put(key, default_values[key])
+          params.put_bool("DoReboot", True)
+      params.put_bool("DefaultParamsSet", True)
+
 def main():
   hw_queue = queue.Queue(maxsize=1)
   end_event = threading.Event()
