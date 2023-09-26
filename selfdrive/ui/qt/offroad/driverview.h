@@ -2,6 +2,7 @@
 
 #include <QStackedLayout>
 
+#include "selfdrive/ui/qt/screenrecorder/screenrecorder.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class DriverViewScene : public QWidget {
