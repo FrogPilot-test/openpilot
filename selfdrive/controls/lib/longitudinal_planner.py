@@ -48,7 +48,7 @@ LEAD_SPEED_DIFF = [-1., -10.]
 
 # Lookup table for stop sign / stop light detection
 STOP_SIGN_BP = [0., 10., 20., 30., 40., 50., 55.]
-STOP_SIGN_DISTANCE = [10, 30., 50., 70., 80., 90., 120.]
+STOP_SIGN_DISTANCE = [15, 35., 55., 75., 85., 95., 125.]
 
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
