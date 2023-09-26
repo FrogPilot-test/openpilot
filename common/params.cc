@@ -92,6 +92,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AggressiveAcceleration", PERSISTENT},
     {"AggressiveJerk", PERSISTENT},
     {"AggressivePersonality", PERSISTENT},
+    {"AlwaysOnLateral", PERSISTENT},
+    {"AlwaysOnLateralMain", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},

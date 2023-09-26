@@ -114,6 +114,7 @@ private:
 
   // FrogPilot variables
   bool accelerationPath;
+  bool alwaysOnLateral;
   bool blindSpotLeft;
   bool blindSpotRight;
   bool compass;
