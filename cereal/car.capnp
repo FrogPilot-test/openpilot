@@ -507,6 +507,7 @@ struct CarParams {
 
   # FrogPilot CarParams
   accelerationProfile @73 :UInt8;
+  conditionalExperimental @75 :Bool;
   drivingPersonalitiesUIWheel @76 :Bool;
   experimentalModeViaWheel @77 :Bool;
   longitudinalTune @78 :Bool;
