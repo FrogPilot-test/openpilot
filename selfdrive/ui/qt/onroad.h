@@ -51,6 +51,8 @@ private:
   bool engageable;
 
   // FrogPilot variables
+  int steeringWheel;
+  std::map<int, QPixmap> wheelImages;
 
 };
 
@@ -112,8 +114,10 @@ private:
   bool rotatingWheel;
   int customColors;
   int steeringAngleDeg;
+  int steeringWheel;
   QPixmap engage_img;
   QPixmap experimental_img;
+  std::map<int, QPixmap> wheelImages;
   std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
 
 protected:

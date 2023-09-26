@@ -167,6 +167,7 @@ typedef struct UIScene {
   int custom_signals;
   int screen_brightness;
   int steering_angle_deg;
+  int steering_wheel;
 
 } UIScene;
 
