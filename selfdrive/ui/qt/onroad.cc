@@ -453,18 +453,6 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
     update();
   });
   animationTimer->start(totalFrames * 11); // 50 milliseconds per frame; syncs up perfectly with my 2019 Lexus ES 350 turn signal clicks
-
-  // Screen recorder
-  record_timer = std::make_shared<QTimer>();
-  QObject::connect(record_timer.get(), &QTimer::timeout, [=]() {
-    if(recorder) {
-      recorder->update_screen();
-    }
-  });
-  record_timer->start(1000/UI_FREQ);
-
-  recorder = new ScreenRecoder(this);
-  recorder->hide();
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {

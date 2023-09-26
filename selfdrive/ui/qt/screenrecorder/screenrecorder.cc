@@ -110,7 +110,7 @@ void ScreenRecoder::start() {
 
   char purge[128] = "";
   char videos_dir[50] = "/data/media";
-  snprintf(purge,sizeof(purge),"ls -td1 %s/*.mp4 | tail -n +%d | xargs rm -f&", videos_dir, 200);
+  snprintf(purge,sizeof(purge),"ls -td1 %s/*.mp4 | tail -n +%d | xargs rm -f&", videos_dir, uiState()->scene.recording_count);
   system(purge);
 
   char filename[64];

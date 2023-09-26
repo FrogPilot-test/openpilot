@@ -173,7 +173,6 @@ typedef struct UIScene {
   bool experimental_mode_via_wheel;
   bool map_open;
   bool mute_dm;
-  bool rec_stat3 = false;
   bool rotating_wheel;
   bool toyota_car = true;
   bool turn_signal_animation;
