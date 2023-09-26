@@ -486,6 +486,7 @@ def thermald_thread(end_event, hw_queue) -> None:
         "DisableAllLogging": "0",
         "DrivingPersonalitiesUIWheel": "1",
         "ExperimentalModeViaWheel": "1",
+        "EVTable": "0",
         "FireTheBabysitter": "0",
         "GreenLightAlert": "0",
         "IncreasedStoppingDistance": "3",

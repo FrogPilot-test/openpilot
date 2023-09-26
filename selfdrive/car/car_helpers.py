@@ -221,7 +221,7 @@ def crash_log(candidate):
     "SmootherBraking", "NudgelessLaneChange", "LaneChangeTimer", "LaneDetection", "OneLaneChange", "TurnDesires", "DisableInternetCheck", 
     "ReverseCruiseIncrease", "TwilsoncoSSH"
   ], [
-    "LowerVolt", "SNGHack", "TSS2Tune", "ZSS"
+    "EVTable", "LowerVolt", "SNGHack", "TSS2Tune", "ZSS"
   ], [
     "CustomTheme", "CustomColors", "CustomIcons", "CustomSignals", "CustomSounds", "Compass", "CustomRoadUI", 
     "LaneLinesWidth", "RoadEdgesWidth", "PathWidth", "PathEdgeWidth", "AccelerationPath", "BlindSpotPath", "UnlimitedLength", "DeveloperUI", 
