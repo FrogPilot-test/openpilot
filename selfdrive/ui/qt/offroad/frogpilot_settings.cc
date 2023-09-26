@@ -120,6 +120,7 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../assets/frog.png"},
+    {"CustomRoadUI", "Custom Road UI", "Customize the road UI to your liking.", "../assets/offroad/icon_road.png"},
     {"NumericalTemp", "Numerical Temperature Gauge", "Replace openpilot's 'GOOD', 'OK', and 'HIGH' temperature statuses with numerical values.\n\nTap the gauge to switch between Celsius and Fahrenheit.", "../assets/offroad/icon_temp.png"},
     {"RotatingWheel", "Rotating Steering Wheel", "The steering wheel in top right corner of the onroad UI rotates alongside your physical steering wheel.", "../assets/offroad/icon_rotate.png"},
     {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png"},
@@ -136,6 +137,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
         createDualParamControl(new CustomColors(), new CustomIcons()),
         createDualParamControl(new CustomSignals(), new CustomSounds()),
       });
+    } else if (key == "CustomRoadUI") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new LaneLinesWidth(), new RoadEdgesWidth()),
+        createDualParamControl(new PathWidth(), new PathEdgeWidth()),
+      });
+      createSubButtonControl(key, {
+        {"AccelerationPath", "Acceleration Path"},
+        {"BlindSpotPath", "Blind Spot Path"},
+        {"UnlimitedLength", "'Unlimited' Road UI Length"},
+      }, mainLayout);
     } else if (key == "ScreenBrightness") {
       mainLayout->addWidget(new ScreenBrightness());
       mainLayout->addWidget(horizontalLine());
