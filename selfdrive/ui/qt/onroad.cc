@@ -119,6 +119,17 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 
   bool widgetClicked = false;
 
+  // Hide speed button
+  const QRect speedRect(rect().center().x() - 175, 50, 350, 350);
+  const bool isSpeedClicked = speedRect.contains(e->pos());
+
+  if (isSpeedClicked) {
+    speedHidden = !params.getBool("HideSpeed");
+    params.putBool("HideSpeed", speedHidden);
+    params_memory.putBool("FrogPilotTogglesUpdated", true);
+    widgetClicked = true;
+  }
+
 #ifdef ENABLE_MAPS
   if (map != nullptr && !widgetClicked) {
     // Switch between map and sidebar when using navigate on openpilot
@@ -316,6 +327,9 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   // FrogPilot variable checks
   const auto &scene = uiState()->scene;
   static auto params = Params();
+  if (params.getBool("HideSpeed")) {
+    speedHidden = true;
+  }
 
   main_layout = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
@@ -509,10 +523,12 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   }
 
   // current speed
-  p.setFont(InterFont(176, QFont::Bold));
-  drawText(p, rect().center().x(), 210, speedStr);
-  p.setFont(InterFont(66));
-  drawText(p, rect().center().x(), 290, speedUnit, 200);
+  if (!speedHidden) {
+    p.setFont(InterFont(176, QFont::Bold));
+    drawText(p, rect().center().x(), 210, speedStr);
+    p.setFont(InterFont(66));
+    drawText(p, rect().center().x(), 290, speedUnit, 200);
+  }
 
   p.restore();
 
