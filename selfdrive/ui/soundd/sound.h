@@ -41,4 +41,7 @@ protected:
 
   // FrogPilot variables
   Params params;
+  bool isCustomTheme;
+  int customSounds;
+  std::unordered_map<int, QString> soundPaths;
 };

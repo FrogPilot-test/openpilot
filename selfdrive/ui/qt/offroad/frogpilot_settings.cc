@@ -96,11 +96,16 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
   mainLayout->addWidget(whiteHorizontalLine());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
+    {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../assets/frog.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
     ParamControl *control = createParamControl(key, label, desc, icon, this);
-    if (key == "") {
+    if (key == "CustomTheme") {
+      createSubControl(key, label, desc, icon, {
+        createDualParamControl(new CustomColors(), new CustomIcons()),
+        createDualParamControl(new CustomSignals(), new CustomSounds()),
+      });
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());

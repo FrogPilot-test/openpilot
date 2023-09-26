@@ -245,6 +245,9 @@ void ui_update_params(UIState *s) {
     scene.default_params_set = params.getBool("DefaultParamsSet");
   }
   if (!toggles_checked && scene.default_params_set) {
+    scene.custom_theme = params.getBool("CustomTheme");
+    scene.custom_colors = scene.custom_theme ? params.getInt("CustomColors") : 0;
+    scene.custom_signals = scene.custom_theme ? params.getInt("CustomSignals") : 0;
     toggles_checked = true;
   }
 }
@@ -257,6 +260,10 @@ void ui_update_live_params(UIState *s) {
   // Update FrogPilot variables when they are changed
   static bool live_toggles_checked = false;
   if (params_memory.getBool("FrogPilotTogglesUpdated")) {
+    if (scene.custom_theme) {
+      scene.custom_colors = params.getInt("CustomColors");
+      scene.custom_signals = params.getInt("CustomSignals");
+    }
     if (live_toggles_checked && scene.enabled) {
       params_memory.putBool("FrogPilotTogglesUpdated", false);
     }
