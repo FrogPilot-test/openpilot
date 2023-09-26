@@ -128,6 +128,7 @@ class Controls:
     self.custom_sounds = self.params.get_int("CustomSounds") if self.custom_theme else 0
     self.frog_sounds = self.custom_sounds == 1
 
+    self.average_desired_curvature = self.CP.pfeiferjDesiredCurvatures
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
 
     # detect sound card presence and ensure successful init
@@ -639,7 +640,9 @@ class Controls:
       self.desired_curvature, self.desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
                                                                                        lat_plan.psis,
                                                                                        lat_plan.curvatures,
-                                                                                       lat_plan.curvatureRates)
+                                                                                       lat_plan.curvatureRates,
+                                                                                       long_plan.distances,
+                                                                                       self.average_desired_curvature)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.last_actuators, self.steer_limited, self.desired_curvature,
                                                                              self.desired_curvature_rate, self.sm['liveLocationKalman'])

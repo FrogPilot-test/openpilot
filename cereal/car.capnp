@@ -503,6 +503,7 @@ struct CarParams {
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
 
   # FrogPilot CarParams
+  pfeiferjDesiredCurvatures @79 :Bool;
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
