@@ -2,7 +2,7 @@
 import math
 import numpy as np
 from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.params import Params
+from openpilot.common.params import Params, put_bool_nonblocking
 from cereal import log
 
 import cereal.messaging as messaging
@@ -49,7 +49,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    self.mpc = LongitudinalMpc(self.CP)
     self.fcw = False
 
     self.a_desired = init_a
@@ -61,11 +61,17 @@ class LongitudinalPlanner:
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
     self.params = Params()
+    self.params_memory = Params("/dev/shm/params")
     self.param_read_counter = 0
-    self.read_param()
     self.personality = log.LongitudinalPersonality.standard
+    self.is_metric = self.params.get_bool("IsMetric")
+
+    # FrogPilot variables
+    self.frogpilot_toggles_updated = False
+    self.read_param()
 
   def read_param(self):
+    if self.frogpilot_toggles_updated:
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
@@ -88,7 +94,8 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm):
-    if self.param_read_counter % 50 == 0:
+    self.frogpilot_toggles_updated = self.params_memory.get_bool("FrogPilotTogglesUpdated")
+    if self.param_read_counter % 50 == 0 or self.frogpilot_toggles_updated:
       self.read_param()
     self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
