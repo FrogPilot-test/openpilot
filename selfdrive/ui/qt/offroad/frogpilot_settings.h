@@ -208,6 +208,12 @@ ParamController(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Tim
   return std::clamp(v, 0, 33);
 )
 
+ParamController(IncreasedStoppingDistance, "IncreasedStoppingDistance", "   Increase Stopping Distance", "Increase the stopping distance for a more comfortable stop.", "../assets/offroad/icon_blank.png",
+  const int distance = params.getInt("IncreasedStoppingDistance");
+  return distance == 0 ? "Off" : QString::number(distance) + (isMetric ? " meters" : " feet");,
+  return std::clamp(v, 0, isMetric ? 5 : 15);
+)
+
 ParamController(LaneChangeTimer, "LaneChangeTimer", "   Lane Change Timer", "Set a time delay before openpilot conducts a nudgeless lane change.", "../assets/offroad/icon_blank.png",
   const int delay = params.getInt("LaneChangeTimer");
   return delay == 0 ? "Instant" : QString::number(static_cast<double>(delay) / 2.0) + " sec";,
