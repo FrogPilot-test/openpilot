@@ -2,6 +2,7 @@ import copy
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import mean
+from openpilot.common.params import Params, put_int_nonblocking
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
@@ -27,7 +28,11 @@ class CarState(CarStateBase):
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
+    self.params = Params()
+    self.params_memory = Params("/dev/shm/params")
+    self.driving_personalities_via_wheel = self.CP.drivingPersonalitiesUIWheel
     self.single_pedal_mode = False
+    self.distance_button_pressed = 0
     self.pedal_steady = 0.
 
   def update(self, pt_cp, cam_cp, loopback_cp):
@@ -131,6 +136,18 @@ class CarState(CarStateBase):
       ret.accFaulted = False
       ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.cruiseState.enabled = pt_cp.vl["ECMCruiseControl"]["CruiseActive"] != 0
+
+    # Driving personalities function
+    if self.driving_personalities_via_wheel and ret.cruiseState.available:
+      distance_button = pt_cp.vl["ASCMSteeringButton"]["DistanceButton"]
+      if distance_button != 0:
+        self.distance_button_pressed += 1
+      else:
+        self.distance_button_pressed = 0
+      if self.distance_button_pressed == 1:
+        personality_profile = self.params.get_int("LongitudinalPersonality")
+        put_int_nonblocking("LongitudinalPersonality", (personality_profile + 1) % 3)
+        self.params_memory.put_bool("FrogPilotTogglesUpdated", True)
 
     return ret
 

@@ -43,7 +43,10 @@ class CarController:
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
 
-    self.use_ev_tables = Params().get_bool("EVTable")
+    self.param = Params()
+    self.params_memory = Params("/dev/shm/params")
+    self.use_ev_tables = self.param.get_bool("EVTable")
+    self.personality = self.param.get_int('LongitudinalPersonality')
 
   @staticmethod
   def calc_pedal_command(accel: float, long_active: bool) -> float:
@@ -67,6 +70,9 @@ class CarController:
     hud_v_cruise = hud_control.setSpeed
     if hud_v_cruise > 70:
       hud_v_cruise = 0
+
+    if self.params_memory.get_bool("FrogPilotTogglesUpdated"):
+      self.personality = self.param.get_int('LongitudinalPersonality')
 
     # Send CAN commands.
     can_sends = []
@@ -168,7 +174,7 @@ class CarController:
         # Send dashboard UI commands (ACC status)
         send_fcw = hud_alert == VisualAlert.fcw
         can_sends.append(gmcan.create_acc_dashboard_command(self.packer_pt, CanBus.POWERTRAIN, CC.enabled,
-                                                            hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw))
+                                                            hud_v_cruise * CV.MS_TO_KPH, hud_control.leadVisible, send_fcw, self.personality))
 
       # Radar needs to know current speed and yaw rate (50hz),
       # and that ADAS is alive (10hz)
