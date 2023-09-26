@@ -41,12 +41,3 @@ class Spinner():
 
   def __exit__(self, exc_type, exc_value, traceback):
     self.close()
-
-
-if __name__ == "__main__":
-  import time
-  with Spinner() as s:
-    s.update("Spinner text")
-    time.sleep(5.0)
-  print("gone")
-  time.sleep(5.0)
