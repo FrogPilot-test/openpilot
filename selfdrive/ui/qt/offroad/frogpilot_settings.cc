@@ -96,7 +96,8 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
   mainLayout->addWidget(whiteHorizontalLine());
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
-    {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../assets/frog.png"}
+    {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../assets/frog.png"},
+    {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
@@ -106,6 +107,9 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
         createDualParamControl(new CustomColors(), new CustomIcons()),
         createDualParamControl(new CustomSignals(), new CustomSounds()),
       });
+    } else if (key == "ScreenBrightness") {
+      mainLayout->addWidget(new ScreenBrightness());
+      mainLayout->addWidget(horizontalLine());
     } else {
       mainLayout->addWidget(control);
       if (key != std::get<0>(toggles.back())) mainLayout->addWidget(horizontalLine());
