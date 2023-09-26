@@ -162,6 +162,7 @@ typedef struct UIScene {
   bool custom_road_ui;
   bool custom_theme;
   bool default_params_set;
+  bool driving_personalities_ui_wheel;
   bool enabled;
   bool experimental_mode;
   bool map_open;
@@ -182,6 +183,7 @@ typedef struct UIScene {
   float path_width;
   float road_edge_width;
   int bearing_deg;
+  int personality_profile;
   int screen_brightness;
   int steering_angle_deg;
   int steering_wheel;

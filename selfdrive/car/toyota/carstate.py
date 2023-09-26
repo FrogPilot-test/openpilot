@@ -48,6 +48,11 @@ class CarState(CarStateBase):
     # FrogPilot variables
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
+    self.driving_personalities_via_wheel = self.CP.drivingPersonalitiesUIWheel
+    self.distance_previously_pressed = False
+    self.profile_restored = False
+    self.distance_button = 0
+    self.previous_distance_lines = self.params.get_int("LongitudinalPersonality")
 
     # DragonPilot ZSS
     self.zss = self.params.get_bool("ZSS")
@@ -189,6 +194,33 @@ class CarState(CarStateBase):
       # Apply offset
       ret.steeringAngleDeg = zorro_steer - self.zss_angle_offset
 
+    # Driving personalities function
+    if self.driving_personalities_via_wheel and ret.cruiseState.available:
+      # Need to subtract by 1 to comply with the personality profiles of "0", "1", and "2"
+      distance_lines = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
+      # Set personality to previously set personality
+      if distance_lines == self.previous_distance_lines:
+        self.profile_restored = True
+      if not self.profile_restored:
+        self.distance_previously_pressed = not self.distance_previously_pressed
+        self.distance_button = not self.distance_previously_pressed
+      else:
+        if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+          # KRKeegan - Add support for toyota distance button
+          self.distance_button = cp_cam.vl["ACC_CONTROL"]["DISTANCE"]
+
+        if self.CP.carFingerprint in RADAR_ACC_CAR:
+          # These cars have the acc_control on car can
+          self.distance_button = cp.vl["ACC_CONTROL"]["DISTANCE"]
+
+        if self.CP.flags & ToyotaFlags.SMART_DSU:
+          self.distance_button = cp.vl["SDSU"]["FD_BUTTON"]
+
+        if distance_lines != self.previous_distance_lines and distance_lines >= 0:
+          put_int_nonblocking("LongitudinalPersonality", distance_lines)
+          self.params_memory.put_bool("FrogPilotTogglesUpdated", True)
+          self.previous_distance_lines = distance_lines
+
     # For configuring onroad statuses
     ret.toyotaCar = True
 
@@ -243,6 +275,9 @@ class CarState(CarStateBase):
       messages += [
         ("PRE_COLLISION", 33),
       ]
+
+    if CP.flags & ToyotaFlags.SMART_DSU:
+      messages.append(("SDSU", 33))
 
     messages += [("SECONDARY_STEER_ANGLE", 0)]
 

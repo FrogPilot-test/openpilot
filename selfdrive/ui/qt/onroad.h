@@ -86,6 +86,7 @@ private:
 
   // FrogPilot widgets
   void drawCompass(QPainter &p);
+  void drawDrivingPersonalities(QPainter &p);
   void drawStatusBar(QPainter &p);
   void drawTurnSignals(QPainter &p);
 
@@ -119,6 +120,7 @@ private:
   bool experimentalMode;
   bool mapOpen;
   bool muteDM;
+  bool onroadAdjustableProfiles;
   bool rotatingWheel;
   bool turnSignalAnimation;
   bool turnSignalLeft;
@@ -126,12 +128,14 @@ private:
   int animationFrameIndex;
   int bearingDeg;
   int customColors;
+  int personalityProfile;
   int steeringAngleDeg;
   int steeringWheel;
   static constexpr int totalFrames = 8;
   QPixmap compass_inner_img;
   QPixmap engage_img;
   QPixmap experimental_img;
+  QVector<std::pair<QPixmap, QString>> profile_data;
   std::map<int, QPixmap> wheelImages;
   std::unordered_map<int, std::pair<QString, std::pair<QColor, std::map<double, QBrush>>>> themeConfiguration;
   std::vector<QPixmap> signalImgVector;
