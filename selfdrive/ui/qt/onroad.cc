@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 
+#include <QApplication>
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QMouseEvent>
@@ -81,6 +82,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
   QObject::connect(uiState(), &UIState::primeChanged, this, &OnroadWindow::primeChanged);
+
+  QObject::connect(&clickTimer, &QTimer::timeout, this, [this]() {
+    clickTimer.stop();
+    QMouseEvent *event = new QMouseEvent(QEvent::MouseButtonPress, timeoutPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::postEvent(this, event);
+  });
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -150,6 +157,16 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
       params.putBool("HideSpeed", speedHidden);
     }
     params_memory.putBool("FrogPilotTogglesUpdated", true);
+    widgetClicked = true;
+  // If the click wasn't for anything specific, change the value of "ExperimentalMode"
+  } else if (scene.experimental_mode_via_wheel && (scene.enabled || previouslyEnabled) && e->pos() != timeoutPoint) {
+    if (clickTimer.isActive()) {
+      clickTimer.stop();
+      params.putBool("ExperimentalMode", !params.getBool("ExperimentalMode"));
+    } else {
+      clickTimer.start(500);
+    }
+    previouslyEnabled = true;
     widgetClicked = true;
   }
 
