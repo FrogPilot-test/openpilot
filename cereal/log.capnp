@@ -1004,6 +1004,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
 
   # FrogPilot LongitudinalPlans
   conditionalExperimental @38 :Bool;
+  greenLight @40 :Bool;
 
   enum LongitudinalPlanSource {
     cruise @0;

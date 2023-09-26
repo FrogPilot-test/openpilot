@@ -633,6 +633,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.PERMANENT: NormalPermanentAlert("paramsd Permanent Error"),
   },
 
+  EventName.greenLight: {
+    ET.PERMANENT: Alert(
+      "Light turned green",
+      "",
+      AlertStatus.frogpilot, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 3.),
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {

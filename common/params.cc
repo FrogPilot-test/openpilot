@@ -158,6 +158,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GithubSshKeys", PERSISTENT},
     {"GithubUsername", PERSISTENT},
     {"GitRemote", PERSISTENT},
+    {"GreenLightAlert", PERSISTENT},
     {"GsmApn", PERSISTENT},
     {"GsmMetered", PERSISTENT},
     {"GsmRoaming", PERSISTENT},

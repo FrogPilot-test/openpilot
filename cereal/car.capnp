@@ -120,6 +120,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
 
     # FrogPilot Events
     frogSteerSaturated @120;
+    greenLight @121;
     torqueNNLoad @122;
     turningLeft @123;
     turningRight @124;
