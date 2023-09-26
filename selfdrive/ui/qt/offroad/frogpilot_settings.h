@@ -230,6 +230,12 @@ ParamController(CustomSounds, "CustomSounds", "Sounds", "Replace the stock openp
   return v >= 0 ? v % 3 : 2;
 )
 
+ParamController(DeveloperUI, "DeveloperUI", "Developer UI", "Displays various information about openpilot and the device itself.", "../assets/offroad/icon_developer.png",
+  const int system = params.getInt("DeveloperUI");
+  return system == 0 ? "Off" : system == 1 ? "'merican" : system == 2 ? "Metric" : "SI";,
+  return v >= 0 ? v % 4 : 3;
+)
+
 ParamController(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
   const int time = params.getInt("DeviceShutdownTimer");
   return time == 0 ? "Instant" : (time > 0 && time <= 3) ? QString::number(time * 15) + " mins" : QString::number(time - 3) + (time == 4 ? " hour" : " hours");,

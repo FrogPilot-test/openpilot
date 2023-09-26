@@ -18,6 +18,11 @@ class Sidebar : public QFrame {
   Q_PROPERTY(QString netType MEMBER net_type NOTIFY valueChanged);
   Q_PROPERTY(int netStrength MEMBER net_strength NOTIFY valueChanged);
 
+  // Developer UI properties
+  Q_PROPERTY(ItemStatus cpuStatus MEMBER cpu_status NOTIFY valueChanged)
+  Q_PROPERTY(ItemStatus memoryStatus MEMBER memory_status NOTIFY valueChanged)
+  Q_PROPERTY(ItemStatus storageStatus MEMBER storage_status NOTIFY valueChanged)
+
 public:
   explicit Sidebar(QWidget* parent = 0);
 
@@ -57,6 +62,9 @@ protected:
   QString net_type;
   int net_strength = 0;
 
+  // Developer UI variables
+  ItemStatus cpu_status, memory_status, storage_status;
+
 private:
   std::unique_ptr<PubMaster> pm;
 
@@ -64,8 +72,11 @@ private:
   bool isCustomTheme;
   bool isFahrenheit;
   bool isNumericalTemp;
+  bool isStorageLeft;
+  bool isStorageUsed;
   int customColors;
   int customIcons;
+  int isDeveloperUI;
   Params params;
   std::unordered_map<int, std::pair<QString, std::vector<QColor>>> themeConfiguration;
   std::unordered_map<int, QPixmap> flag_imgs;

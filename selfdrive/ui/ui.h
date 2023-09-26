@@ -192,10 +192,16 @@ typedef struct UIScene {
   int conditional_speed;
   int conditional_speed_lead;
   int conditional_status;
+  int desired_follow;
+  int developer_ui;
+  int obstacle_distance;
+  int obstacle_distance_stock;
   int personality_profile;
   int screen_brightness;
   int steering_angle_deg;
   int steering_wheel;
+  int stopped_equivalence;
+  int stopped_equivalence_stock;
   QPolygonF track_edge_vertices;
   QPolygonF track_left_adjacent_lane_vertices;
   QPolygonF track_right_adjacent_lane_vertices;
