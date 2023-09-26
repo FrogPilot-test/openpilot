@@ -142,6 +142,7 @@ class Controls:
     self.conditional_experimental_mode = self.CP.conditionalExperimental
     self.reverse_cruise_increase = self.params.get_bool("ReverseCruiseIncrease")
     self.nnff = self.CP.twilsoncoNNFF
+    self.pause_lateral_on_signal = self.params.get_bool("PauseLateralOnSignal")
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -646,8 +647,9 @@ class Controls:
         self.current_alert_types.append(ET.WARNING)
 
     # Check which actuators can be enabled
+    signal_check = not (CS.leftBlinker or CS.rightBlinker) or not self.pause_lateral_on_signal
     standstill = CS.vEgo <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
-    CC.latActive = (self.active or CC.alwaysOnLateral) and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
+    CC.latActive = (self.active or CC.alwaysOnLateral) and signal_check and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
                    (not standstill or self.joystick_mode)
     CC.longActive = self.enabled and not self.events.contains(ET.OVERRIDE_LONGITUDINAL) and self.CP.openpilotLongitudinalControl
 
