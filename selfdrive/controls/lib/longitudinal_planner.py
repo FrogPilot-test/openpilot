@@ -322,7 +322,7 @@ class LongitudinalPlanner:
   def detect_lead(self, radarstate):
     if radarstate.leadOne.status:
       # Check to make sure the lead isn't crossing the intersection
-      if abs(radarstate.leadOne.yRel - self.previous_yRel) < 0.25:
+      if abs(radarstate.leadOne.yRel - self.previous_yRel) < 0.1:
         self.lead_status_count = max(10, self.lead_status_count + 1)
       else:
         self.lead_status_count = min(0, self.lead_status_count - 1)
