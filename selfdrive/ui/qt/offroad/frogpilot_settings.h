@@ -202,6 +202,12 @@ ParamController(CustomSounds, "CustomSounds", "Sounds", "Replace the stock openp
   return v >= 0 ? v % 3 : 2;
 )
 
+ParamController(DeviceShutdownTimer, "DeviceShutdownTimer", "Device Shutdown Timer", "Set the timer for when the device turns off after being offroad to reduce energy waste and prevent battery drain.", "../assets/offroad/icon_time.png",
+  const int time = params.getInt("DeviceShutdownTimer");
+  return time == 0 ? "Instant" : (time > 0 && time <= 3) ? QString::number(time * 15) + " mins" : QString::number(time - 3) + (time == 4 ? " hour" : " hours");,
+  return std::clamp(v, 0, 33);
+)
+
 ParamController(ScreenBrightness, "ScreenBrightness", "Screen Brightness", "Set a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png",
   const int brightness = params.getInt("ScreenBrightness");
   return brightness == 101 ? "Auto" : brightness == 0 ? "Off" : QString::number(brightness) + "%";,
