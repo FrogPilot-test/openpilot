@@ -260,6 +260,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"VisionRadarToggle", PERSISTENT},
     {"WheeledBody", PERSISTENT},
     {"WideCameraDisable", PERSISTENT},
+    {"ZSS", PERSISTENT},
 };
 
 } // namespace
