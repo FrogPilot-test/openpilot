@@ -97,7 +97,8 @@ FrogPilotVisualsPanel::FrogPilotVisualsPanel(QWidget *parent) : FrogPilotPanel(p
 
   static const std::vector<std::tuple<QString, QString, QString, QString>> toggles = {
     {"CustomTheme", "Custom Theme", "Enable the ability to use custom themes.", "../assets/frog.png"},
-    {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png"}
+    {"ScreenBrightness", "Screen Brightness", "Choose a custom screen brightness level or use the default 'Auto' brightness setting.", "../assets/offroad/icon_light.png"},
+    {"Sidebar", "Sidebar Shown By Default", "Sidebar is shown by default while onroad as opposed to hidden.", "../assets/offroad/icon_metric.png"}
   };
 
   for (const auto &[key, label, desc, icon] : toggles) {
