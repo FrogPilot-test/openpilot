@@ -28,8 +28,7 @@ class ChryslerPlatformConfig(PlatformConfig):
 
 @dataclass(frozen=True)
 class ChryslerCarSpecs(CarSpecs):
-  #minSteerSpeed: float = 3.8  # m/s
-  minSteerSpeed: float = 0
+  minSteerSpeed: float = 3.8  # m/s
 
 
 class CAR(Platforms):
