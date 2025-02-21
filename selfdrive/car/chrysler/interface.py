@@ -33,8 +33,8 @@ class CarInterface(CarInterfaceBase):
       new_eps_firmware = any(fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841" for fw in car_fw)
       if (0x4FF in fingerprint[0]):
         ret.minSteerSpeed = 0.5
-      elif new_eps_platform or new_eps_firmware:
-        ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
+      #elif new_eps_platform or new_eps_firmware:
+        #ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
 
     # Chrysler
     if candidate in (CAR.CHRYSLER_PACIFICA_2017_HYBRID, CAR.CHRYSLER_PACIFICA_2018, CAR.CHRYSLER_PACIFICA_2018_HYBRID, \
