@@ -31,8 +31,10 @@ class CarInterface(CarInterfaceBase):
       # Newer FW versions standard on the following platforms, or flashed by a dealer onto older platforms have a higher minimum steering speed.
       new_eps_platform = candidate in (CAR.CHRYSLER_PACIFICA_2019_HYBRID, CAR.CHRYSLER_PACIFICA_2020, CAR.JEEP_GRAND_CHEROKEE_2019, CAR.DODGE_DURANGO)
       new_eps_firmware = any(fw.ecu == 'eps' and fw.fwVersion[:4] >= b"6841" for fw in car_fw)
-      # if new_eps_platform or new_eps_firmware:
-      #   ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
+      if (0x4FF in fingerprint[0]):
+        ret.minSteerSpeed = 0.
+      #elif new_eps_platform or new_eps_firmware:
+      #  ret.flags |= ChryslerFlags.HIGHER_MIN_STEERING_SPEED.value
 
     # Chrysler
     if candidate in (CAR.CHRYSLER_PACIFICA_2017_HYBRID, CAR.CHRYSLER_PACIFICA_2018, CAR.CHRYSLER_PACIFICA_2018_HYBRID, \
