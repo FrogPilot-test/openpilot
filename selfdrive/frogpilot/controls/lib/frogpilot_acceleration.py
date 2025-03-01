@@ -11,7 +11,7 @@ A_CRUISE_MIN_SPORT = A_CRUISE_MIN * 2
                        # MPH = [0.0,  11,  22,  34,  45,  56,  89]
 A_CRUISE_MAX_BP_CUSTOM =       [0.0,  5., 10., 15., 20., 25., 40.]
 A_CRUISE_MAX_VALS_ECO =        [2.0, 1.5, 1.0, 0.8, 0.6, 0.4, 0.2]
-A_CRUISE_MAX_VALS_SPORT =      [1.0, 1.0, 1.0, 1.0, 1.5, 1.5, 2.0]
+A_CRUISE_MAX_VALS_SPORT =      [1.5, 1.5, 1.25, 1.5, 1.5, 1.5, 2.0]
 A_CRUISE_MAX_VALS_SPORT_PLUS = [2.5, 2.5, 3.0, 2.5, 2.5, 2.5, 2.5]
 
 def get_max_accel_eco(v_ego):
@@ -30,7 +30,7 @@ def get_max_accel_ramp_off(max_accel, v_cruise, v_ego):
   return np.interp(v_cruise - v_ego, [0., 1., 5., 10.], [0., 0.5, 1.0, max_accel])
 
 def get_max_allowed_accel(v_ego):
-  return float(np.interp(v_ego, [0., 5., 20.], [4.0, 4.0, 2.0]))  # ISO 15622:2018
+  return np.interp(v_ego, [0., 5., 20.], [4.0, 4.0, 2.0])  # ISO 15622:2018
 
 class FrogPilotAcceleration:
   def __init__(self, FrogPilotPlanner):
