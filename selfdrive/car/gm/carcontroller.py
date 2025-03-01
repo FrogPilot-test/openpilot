@@ -54,7 +54,7 @@ class CarController(CarControllerBase):
     self.frontalArea = 1.05 * CP.wheelbase + 0.0679
     self.coeffDrag = 0.30
     self.airDensity = 1.225
-    
+
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
@@ -138,7 +138,7 @@ class CarController(CarControllerBase):
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = int(min(-100 * self.CP.stopAccel, self.params.MAX_BRAKE))
         else:
-
+          
           if len(CC.orientationNED) == 3 and CS.out.vEgo > self.CP.vEgoStopping:
             accel_due_to_pitch = math.sin(CC.orientationNED[1]) * ACCELERATION_DUE_TO_GRAVITY
           else:
@@ -162,7 +162,7 @@ class CarController(CarControllerBase):
           self.apply_brake = int(round(interp(brake_accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
           if self.apply_brake > 0:
             self.apply_gas = self.params.INACTIVE_REGEN
-            
+
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
